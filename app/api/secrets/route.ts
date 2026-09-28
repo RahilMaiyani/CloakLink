@@ -13,8 +13,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const allowedTtl = ["300", "3600", "86400", "604800"];
-    const ttlSeconds = allowedTtl.includes(ttl) ? ttl : 86400;
+    const allowedTtl = [300, 3600, 86400, 604800];
+    const ttlSeconds = allowedTtl.includes(ttl) ? parseInt(ttl) : 86400;
 
     const secretId = crypto.randomBytes(12).toString("base64url");
 

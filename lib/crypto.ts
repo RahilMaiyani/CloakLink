@@ -6,9 +6,9 @@ export function bufferToBase64Url(buffer: ArrayBuffer): string {
   }
 
   return btoa(binary)
-    .replace("/\+/g", "-")
-    .replace("/\//g", "-")
-    .replace("/\=+$/", "-");
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 export function base64UrlToBuffer(base64Url: string): Uint8Array {
