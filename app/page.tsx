@@ -65,7 +65,13 @@ export default function HomePage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!res.ok) {
+        if (res.status === 429) {
+          alert(data.error);
+          return;
+        }
+        throw new Error(data.error || "Storage failed");
+      }
 
       setShareableUrl(`${window.location.origin}/s/${data.id}#k=${keyString}`);
       setText("");
@@ -167,7 +173,7 @@ export default function HomePage() {
                   placeholder="# Paste sensitive configs, credentials, or keys..."
                   required
                   spellCheck={false}
-                  className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 [color-scheme:dark]"
+                  className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 scheme-dark"
                 />
               </div>
 
@@ -195,7 +201,7 @@ export default function HomePage() {
                 <select
                   value={ttl}
                   onChange={(e) => setTtl(Number(e.target.value))}
-                  className="w-full h-11 sm:h-12 bg-neutral-950/80 border border-neutral-800 rounded-xl px-3.5 text-xs sm:text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 transition-colors [color-scheme:dark] cursor-pointer"
+                  className="w-full h-11 sm:h-12 bg-neutral-950/80 border border-neutral-800 rounded-xl px-3.5 text-xs sm:text-sm text-neutral-200 focus:outline-none focus:border-emerald-500 transition-colors scheme-dark cursor-pointer"
                 >
                   <option value={300}>5 Minutes</option>
                   <option value={3600}>1 Hour</option>

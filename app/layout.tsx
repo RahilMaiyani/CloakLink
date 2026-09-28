@@ -33,7 +33,7 @@ export default function RootLayout({
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
           <LightRays
             raysOrigin="top-center-offset"
-            raysColor="#5dfeca"
+            raysColor="#34D399"
             raysSpeed={0.9}
             lightSpread={0.9}
             rayLength={1.5}
