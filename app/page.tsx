@@ -95,14 +95,16 @@ export default function HomePage() {
       <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
         {/* Brand Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 sm:pb-6 sm:mb-6 border-b border-neutral-800 gap-3 sm:gap-4">
+          {/* Inside app/page.tsx */}
           <div className="flex items-center gap-3">
             <div className="p-2 sm:p-3 bg-emerald-950/80 text-emerald-400 rounded-xl border border-emerald-800/80 shadow-inner shrink-0">
               <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Change here */}
                 <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-100">
-                  CloakLink
+                  Cloaker
                 </h1>
                 <span className="text-[10px] uppercase font-semibold bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2 py-0.5 rounded-full">
                   Zero-Knowledge

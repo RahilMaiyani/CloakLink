@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CloakLink",
-  description: "Self-destructing secrets",
+  title: "Cloaker | Zero-Knowledge Ephemeral Secrets",
+  description: "End-to-end encrypted, self-destructing secret sharing platform",
 };
 
 export default function RootLayout({

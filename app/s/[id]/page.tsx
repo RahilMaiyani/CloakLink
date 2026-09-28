@@ -117,13 +117,15 @@ export default function RevealPage() {
       <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
         {/* Brand Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 sm:pb-6 sm:mb-6 border-b border-neutral-800 gap-3 sm:gap-4">
+          {/* Inside app/s/[id]/page.tsx */}
           <div className="flex items-center gap-3">
             <div className="p-2 sm:p-2.5 bg-neutral-950 text-neutral-300 rounded-xl border border-neutral-800 shrink-0">
               <Lock className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
+              {/* Change here */}
               <h1 className="text-lg font-bold tracking-tight text-neutral-100">
-                CloakLink
+                Cloaker
               </h1>
               <p className="text-[11px] sm:text-xs text-neutral-400">
                 Zero-knowledge decryption terminal

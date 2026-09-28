@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createSecretLimiter, burnSecretLimiter } from "@/lib/ratelimit";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const forwardedFor = request.headers.get("x-forwarded-for");
