@@ -220,8 +220,8 @@ export default function RevealPage() {
                 </div>
               </div>
 
-              <div className="min-h-[200px] sm:min-h-[260px] max-h-[380px] sm:max-h-[460px] overflow-auto font-mono text-xs sm:text-sm leading-6 [color-scheme:dark] max-w-full">
-                <div className="flex min-w-full w-max min-h-[200px] sm:min-h-[260px]">
+              <div className="min-h-50 sm:min-h-65 max-h-95 sm:max-h-115 overflow-auto font-mono text-xs sm:text-sm leading-6 scheme-dark max-w-full">
+                <div className="flex min-w-full w-max min-h-50 sm:min-h-65">
                   <div className="sticky left-0 z-10 w-9 sm:w-12 py-3 sm:py-3.5 bg-neutral-950 border-r border-neutral-800 text-neutral-600 select-none text-right pr-2 sm:pr-3.5 font-medium shrink-0">
                     {secretContent.split("\n").map((_, i) => (
                       <div key={i}>{i + 1}</div>
