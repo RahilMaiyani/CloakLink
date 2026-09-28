@@ -3,7 +3,22 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { decryptSecret } from "@/lib/crypto";
-import { ShieldAlert, Flame, Check, Copy } from "lucide-react";
+import {
+  ShieldAlert,
+  Flame,
+  Check,
+  Copy,
+  Lock,
+  Download,
+  Terminal,
+  ArrowRight,
+} from "lucide-react";
+import Link from "next/link";
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
 
 export default function RevealPage() {
   const { id } = useParams<{ id: string }>();
@@ -75,81 +90,167 @@ export default function RevealPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleDownload() {
+    if (!secretContent) return;
+    const blob = new Blob([secretContent], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `secret-${id.slice(0, 8)}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (metaLoading) {
     return (
-      <main className="min-h-screen bg-neutral-950 text-neutral-400 flex items-center justify-center font-mono text-sm">
-        Verifying cryptographic state...
-      </main>
+      <div className="min-h-dvh w-full flex flex-col items-center justify-center font-mono text-xs gap-3 p-4">
+        <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span>Verifying cryptographic state...</span>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col items-center justify-center p-6 font-mono">
-      <div className="w-full max-w-xl bg-neutral-900 border border-neutral-800 rounded-xl p-8 shadow-2xl">
-        {!exists || error ? (
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 bg-red-950/60 border border-red-800/80 rounded-full flex items-center justify-center mx-auto text-red-400">
-              <Flame className="w-6 h-6" />
+    <div className="min-h-dvh w-full flex flex-col justify-center items-center py-6 px-3.5 sm:p-6 md:p-10 font-mono">
+      <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
+        {/* Brand Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 sm:pb-6 sm:mb-6 border-b border-neutral-800 gap-3 sm:gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 sm:p-2.5 bg-neutral-950 text-neutral-300 rounded-xl border border-neutral-800 shrink-0">
+              <Lock className="w-5 h-5 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-bold text-neutral-200">
-              Secret Expired or Destroyed
-            </h2>
-            <p className="text-xs text-neutral-400 leading-relaxed">
-              {error ||
-                "This note was already viewed, reached its expiration time, or never existed."}
-            </p>
+            <div>
+              <h1 className="text-lg font-bold tracking-tight text-neutral-100">
+                CloakLink
+              </h1>
+              <p className="text-[11px] sm:text-xs text-neutral-400">
+                Zero-knowledge decryption terminal
+              </p>
+            </div>
+          </div>
+          <div className="self-start sm:self-auto flex items-center gap-2 text-[11px] sm:text-xs text-neutral-400 bg-neutral-950/80 px-3 py-1.5 rounded-lg border border-neutral-800 shrink-0">
+            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Encrypted Tunnel</span>
+          </div>
+        </div>
+
+        {!exists || error ? (
+          <div className="text-center space-y-5 py-8 sm:py-12">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-950/60 border border-red-800/80 rounded-2xl flex items-center justify-center mx-auto text-red-400 shadow-inner">
+              <Flame className="w-6 h-6 sm:w-7 sm:h-7" />
+            </div>
+            <div className="space-y-1.5">
+              <h2 className="text-base sm:text-lg font-bold text-neutral-200">
+                Secret Expired or Destroyed
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto leading-relaxed px-2">
+                {error ||
+                  "This note was already accessed and burned, exceeded its lifetime window, or never existed."}
+              </p>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl text-xs font-semibold transition"
+              >
+                Create a New Secret <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
           </div>
         ) : !secretContent ? (
-          <div className="space-y-6">
-            <div className="p-4 bg-amber-950/30 border border-amber-800/40 rounded-lg text-amber-300 text-xs flex gap-3">
-              <ShieldAlert className="w-5 h-5 shrink-0" />
-              <span>
-                Attention: Revealing this note permanently deletes it from the
-                database immediately. It cannot be recovered.
-              </span>
+          <div className="space-y-5 py-2">
+            <div className="p-4 sm:p-5 bg-amber-950/30 border border-amber-800/40 rounded-xl text-amber-300 text-xs sm:text-sm flex gap-3.5 items-start">
+              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+              <div className="space-y-1">
+                <p className="font-semibold text-amber-200">
+                  Self-Destruction Warning
+                </p>
+                <p className="text-xs text-amber-300/80 leading-relaxed">
+                  Revealing this note triggers an atomic deletion request on our
+                  storage layer. Once decrypted, it will be wiped from memory
+                  and cannot be recovered.
+                </p>
+              </div>
             </div>
 
             <button
               onClick={handleReveal}
               disabled={isBurning}
-              className="w-full py-3.5 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-lg text-sm flex items-center justify-center gap-2 transition"
+              className="w-full h-12 sm:h-14 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-red-950/50 cursor-pointer active:scale-[0.99]"
             >
-              <Flame className="w-4 h-4" />
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
               {isBurning
-                ? "Destroying & Decrypting..."
+                ? "Destroying on Server & Decrypting..."
                 : "Reveal & Permanently Destroy"}
             </button>
           </div>
         ) : (
           <div className="space-y-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-emerald-400 uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                Decrypted Payload
-              </span>
-              <span className="text-[11px] text-neutral-500">
-                Deleted from server
-              </span>
+            {/* Decrypted Payload Terminal */}
+            <div className="w-full border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner">
+              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2.5 text-xs select-none">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-400 font-semibold tracking-wide text-[11px] sm:text-xs">
+                    DECRYPTED PAYLOAD (
+                    {formatBytes(new Blob([secretContent]).size)})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleDownload}
+                    className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-neutral-200 bg-neutral-950 border border-neutral-800 hover:border-neutral-700 px-2.5 py-1.5 sm:px-3 rounded-lg transition cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Download</span>
+                  </button>
+                  <button
+                    onClick={handleCopy}
+                    className="flex items-center gap-1.5 text-[11px] text-neutral-950 font-bold bg-neutral-100 hover:bg-white px-2.5 py-1.5 sm:px-3 rounded-lg transition cursor-pointer active:scale-95"
+                  >
+                    {copied ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5" />
+                    )}
+                    <span>{copied ? "Copied" : "Copy Raw"}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="min-h-[200px] sm:min-h-[260px] max-h-[380px] sm:max-h-[460px] overflow-auto font-mono text-xs sm:text-sm leading-6 [color-scheme:dark] max-w-full">
+                <div className="flex min-w-full w-max min-h-[200px] sm:min-h-[260px]">
+                  <div className="sticky left-0 z-10 w-9 sm:w-12 py-3 sm:py-3.5 bg-neutral-950 border-r border-neutral-800 text-neutral-600 select-none text-right pr-2 sm:pr-3.5 font-medium shrink-0">
+                    {secretContent.split("\n").map((_, i) => (
+                      <div key={i}>{i + 1}</div>
+                    ))}
+                  </div>
+
+                  <pre className="flex-1 p-3 sm:p-3.5 text-neutral-200 whitespace-pre selection:bg-emerald-950 selection:text-emerald-300 font-mono">
+                    {secretContent}
+                  </pre>
+                </div>
+              </div>
             </div>
 
-            <pre className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-4 text-xs text-neutral-200 whitespace-pre-wrap break-all max-h-80 overflow-y-auto">
-              {secretContent}
-            </pre>
-
-            <button
-              onClick={handleCopy}
-              className="w-full py-2.5 bg-neutral-100 hover:bg-white text-neutral-950 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition"
-            >
-              {copied ? (
-                <Check className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-              {copied ? "Copied" : "Copy to Clipboard"}
-            </button>
+            {/* Post-Reveal Actions & Status Bar */}
+            <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-xs text-neutral-500 pt-1 gap-2.5 text-center sm:text-left">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+                Ciphertext destroyed on Redis server
+              </span>
+              <Link
+                href="/"
+                className="text-neutral-400 hover:text-emerald-400 transition flex items-center gap-1 font-medium"
+              >
+                Send your own secret <ArrowRight className="w-3 h-3" />
+              </Link>
+            </div>
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
