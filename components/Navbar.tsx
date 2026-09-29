@@ -1,35 +1,130 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Lock, ShieldCheck, Terminal } from "lucide-react";
+import { ShieldCheck, Info, X, KeyRound, EyeOff, Zap } from "lucide-react";
 
 export default function Navbar() {
-  return (
-    <header className="w-full border-b border-neutral-800/80 bg-neutral-950/50 backdrop-blur-md sticky top-0 z-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="p-2 bg-emerald-950/80 text-emerald-400 rounded-xl border border-emerald-800/60 shadow-inner group-hover:border-emerald-500/80 transition-colors">
-            <Lock className="w-4 h-4" />
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono font-bold text-base tracking-tight text-neutral-100 group-hover:text-emerald-300 transition-colors">
-              Cloaker
-            </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono uppercase font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded-full">
-              <ShieldCheck className="w-3 h-3" />
-              Zero-Knowledge
-            </span>
-          </div>
-        </Link>
+  const [showInfo, setShowInfo] = useState(false);
 
-        <div className="flex items-center gap-3 justify-end">
-          <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 bg-neutral-900/80 px-3 py-1.5 rounded-lg border border-neutral-800">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <Terminal className="w-3.5 h-3.5 text-neutral-400 hidden sm:inline" />
-            <span className="hidden sm:inline">AES-256-GCM</span>
+  return (
+    <>
+      <header className="sticky top-3 sm:top-5 z-50 w-full px-3.5 sm:px-6 md:px-8">
+        <div className="max-w-4xl mx-auto h-14 sm:h-15 bg-neutral-950/75 border border-neutral-800/90 rounded-2xl px-3.5 sm:px-5 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl ring-1 ring-white/[0.04]">
+          {/* Brand Logo & Emblem */}
+          <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group">
+            <div className="w-8 h-8 rounded-xl bg-neutral-900/90 border border-neutral-800 flex items-center justify-center group-hover:border-emerald-500/50 group-hover:bg-neutral-900 transition-all duration-200">
+              {/* Minimalist Geometric 'C' Emblem */}
+              <svg
+                className="w-4 h-4 text-emerald-400 transition-transform duration-200 group-hover:scale-110"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 7A8.5 8.5 0 1 0 18 17" />
+              </svg>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-sm sm:text-base tracking-tight text-neutral-100 group-hover:text-emerald-300 transition-colors">
+                Cloaker
+              </span>
+              <span className="text-[10px] font-mono tracking-wider uppercase font-semibold text-emerald-400/90 bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1">
+                Zero-Knowledge
+              </span>
+            </div>
+          </Link>
+
+          {/* Right Action & Security Badge */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Live Security Chip */}
+            <div className="hidden md:flex items-center gap-2 text-[11px] font-mono text-neutral-400 bg-neutral-900/90 px-3 py-1.5 rounded-xl border border-neutral-800/80 shadow-inner">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span className="text-neutral-300 font-medium">AES-256</span>
+              <span className="text-neutral-600">|</span>
+              <span className="text-neutral-500">In-Memory</span>
+            </div>
+
+            {/* Security Info Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setShowInfo(true)}
+              className="flex items-center gap-1.5 text-[11px] font-mono text-neutral-300 hover:text-white bg-neutral-900/90 hover:bg-neutral-800/90 px-2.5 sm:px-3 py-1.5 rounded-xl border border-neutral-800 hover:border-neutral-700 transition cursor-pointer active:scale-95"
+              title="How Cloaker Security Works"
+            >
+              <Info className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden xs:inline">Architecture</span>
+            </button>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Security Architecture Modal */}
+      {showInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-neutral-950 border border-neutral-800 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 font-mono">
+            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+              <div className="flex items-center gap-2 text-neutral-100 font-bold text-sm">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                Zero-Knowledge Cryptography
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInfo(false)}
+                className="w-7 h-7 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs text-neutral-300 leading-relaxed">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
+                <KeyRound className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-neutral-200">URL Fragment Key Isolation</div>
+                  <div className="text-[11px] text-neutral-400">
+                    The 256-bit AES key lives exclusively in the URL fragment (<code className="text-emerald-400">#k=...</code>), which is never transmitted over HTTP to our servers.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
+                <EyeOff className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-neutral-200">Client-Side Only Processing</div>
+                  <div className="text-[11px] text-neutral-400">
+                    Encryption and decryption execute via native W3C WebCrypto in your browser memory before any payload leaves your machine.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-neutral-900/60 border border-neutral-800/60">
+                <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-neutral-200">Atomic Self-Destruction</div>
+                  <div className="text-[11px] text-neutral-400">
+                    Reading a burn-on-read note invokes an atomic purge command on our Redis storage, permanently deleting ciphertext records.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowInfo(false)}
+              className="w-full h-10 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded-xl text-xs transition cursor-pointer"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

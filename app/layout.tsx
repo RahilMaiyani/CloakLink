@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-neutral-950 text-neutral-100 flex flex-col relative">
+      <body className="min-h-full bg-neutral-950 text-neutral-100 flex flex-col relative overflow-x-hidden">
         <div className="fixed w-full h-full top-0 left-0 pointer-events-none z-0">
           <Grainient
             color1="#5dfeca"

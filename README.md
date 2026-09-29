@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div align="center">
+
+# Cloaker
+
+**Zero-knowledge, ephemeral secret sharing.**  
+Send passwords, tokens, and sensitive configs with end-to-end encryption and self-destruction.
+
+---
+
+</div>
+
+## Key Features
+
+- **Zero-Knowledge Encryption** — Encrypted in-memory using Web Crypto API (`AES-256-GCM`). Decryption keys live exclusively in the URL fragment (`#k=...`) and never reach the server.
+- **Pointer-Reference Architecture** — Generate up to 3 independent links for one secret without duplicating payloads in storage.
+- **Flexible Destruction Policies**:
+  - **Burn on Read**: Link pointer is deleted atomically upon decryption.
+  - **Destroy on Expiry**: Reusable link until the countdown timer expires.
+- **Ephemeral Storage** — Backed by serverless Upstash Redis with native TTL expiration.
+- **Rate Limited** — Edge-safe IP rate limiting on secret creation and reveal endpoints.
+
+---
+
+## How It Works
+
+```
+[ Sender Browser ]  -- (AES-256-GCM Encrypt) -->  Ciphertext & IV  --> [ Upstash Redis ]
+         |
+         +--> Shareable URL: https://cloaker.app/s/<linkId>#k=<keyString>
+                                                               |
+                                                   (Key stays in fragment,
+                                                    never sent over HTTP)
+                                                               |
+[ Recipient Browser ] <-- Ciphertext & IV <-- [ Atomically Burn Link Pointer ]
+         |
+         +--> (Decrypts in memory using #k=...) --> Plaintext
+```
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### 1. Clone & Install
+
+```bash
+git clone https://github.com/RahilMaiyani/Cloaker.git
+cd cloaker
+npm install
+```
+
+### 2. Environment Variables
+
+Create a `.env.local` file:
+
+```env
+UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
+UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
+```
+
+### 3. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router, React 19)
+- **Styling**: [Tailwind CSS v4](https://tailwindcss.com)
+- **Cryptography**: W3C Web Crypto API (`SubtleCrypto`)
+- **Database**: [Upstash Redis](https://upstash.com) & `@upstash/ratelimit`
+- **Icons**: [Lucide React](https://lucide.dev)
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+<div align="center">
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Made for private, secure, and ephemeral sharing.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</div>

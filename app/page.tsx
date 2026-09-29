@@ -221,11 +221,10 @@ export default function HomePage() {
 
               {/* Advanced Settings Accordion Body (Smooth Expand from Bottom) */}
               <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                  advancedOpen
-                    ? "max-h-96 opacity-100 mt-4"
-                    : "max-h-0 opacity-0 mt-0 pointer-events-none"
-                }`}
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${advancedOpen
+                  ? "max-h-96 opacity-100 mt-4"
+                  : "max-h-0 opacity-0 mt-0 pointer-events-none"
+                  }`}
               >
                 <div className="p-4 sm:p-5 bg-neutral-950/90 border border-neutral-800 rounded-xl space-y-4">
                   {/* Destruction Policy */}
@@ -325,7 +324,7 @@ export default function HomePage() {
               </button>
 
               {/* Live Settings Status Line */}
-              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 select-none">
+              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 select-none mt-2">
                 <span>
                   {ttl === 300
                     ? "5 Minutes"
