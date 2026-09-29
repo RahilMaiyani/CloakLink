@@ -115,29 +115,6 @@ export default function RevealPage() {
   return (
     <div className="min-h-dvh w-full flex flex-col justify-center items-center py-6 px-3.5 sm:p-6 md:p-10 font-mono">
       <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
-        {/* Brand Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-5 mb-5 sm:pb-6 sm:mb-6 border-b border-neutral-800 gap-3 sm:gap-4">
-          {/* Inside app/s/[id]/page.tsx */}
-          <div className="flex items-center gap-3">
-            <div className="p-2 sm:p-2.5 bg-neutral-950 text-neutral-300 rounded-xl border border-neutral-800 shrink-0">
-              <Lock className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              {/* Change here */}
-              <h1 className="text-lg font-bold tracking-tight text-neutral-100">
-                Cloaker
-              </h1>
-              <p className="text-[11px] sm:text-xs text-neutral-400">
-                Zero-knowledge decryption terminal
-              </p>
-            </div>
-          </div>
-          <div className="self-start sm:self-auto flex items-center gap-2 text-[11px] sm:text-xs text-neutral-400 bg-neutral-950/80 px-3 py-1.5 rounded-lg border border-neutral-800 shrink-0">
-            <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Encrypted Tunnel</span>
-          </div>
-        </div>
-
         {!exists || error ? (
           <div className="text-center space-y-5 py-8 sm:py-12">
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-950/60 border border-red-800/80 rounded-2xl flex items-center justify-center mx-auto text-red-400 shadow-inner">
@@ -163,13 +140,13 @@ export default function RevealPage() {
           </div>
         ) : !secretContent ? (
           <div className="space-y-5 py-2">
-            <div className="p-4 sm:p-5 bg-amber-950/30 border border-amber-800/40 rounded-xl text-amber-300 text-xs sm:text-sm flex gap-3.5 items-start">
-              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+            <div className="p-4 sm:p-5 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs sm:text-sm flex gap-3.5 items-start">
+              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
               <div className="space-y-1">
-                <p className="font-semibold text-amber-200">
+                <p className="font-semibold text-emerald-200">
                   Self-Destruction Warning
                 </p>
-                <p className="text-xs text-amber-300/80 leading-relaxed">
+                <p className="text-xs text-emerald-300/80 leading-relaxed">
                   Revealing this note triggers an atomic deletion request on our
                   storage layer. Once decrypted, it will be wiped from memory
                   and cannot be recovered.
@@ -180,7 +157,7 @@ export default function RevealPage() {
             <button
               onClick={handleReveal}
               disabled={isBurning}
-              className="w-full h-12 sm:h-14 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-red-950/50 cursor-pointer active:scale-[0.99]"
+              className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-red-950/50 cursor-pointer active:scale-[0.99]"
             >
               <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
               {isBurning
@@ -237,17 +214,18 @@ export default function RevealPage() {
               </div>
             </div>
 
-            {/* Post-Reveal Actions & Status Bar */}
             <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-xs text-neutral-500 pt-1 gap-2.5 text-center sm:text-left">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-                Ciphertext destroyed on Redis server
+                Ciphertext destroyed on server
               </span>
               <Link
                 href="/"
-                className="text-neutral-400 hover:text-emerald-400 transition flex items-center gap-1 font-medium"
+                className="text-white bg-emerald-700/60 rounded-full p-1.5 px-2 hover:text-emerald-300 transition"
               >
-                Send your own secret <ArrowRight className="w-3 h-3" />
+                <span className="flex items-center gap-1 font-medium">
+                  Send your own secret <ArrowRight className="w-3 h-3" />
+                </span>
               </Link>
             </div>
           </div>
