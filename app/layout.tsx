@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cloaker | Zero-Knowledge Ephemeral Secrets",
+  title: "Cloaker",
   description: "End-to-end encrypted, self-destructing secret sharing platform",
 };
 
@@ -29,8 +29,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full bg-neutral-950 text-neutral-100 flex flex-col relative overflow-hidden">
-        <div style={{ width: "100%", height: "100%", position: "absolute" }}>
+      <body className="min-h-full bg-neutral-950 text-neutral-100 flex flex-col relative">
+        <div className="fixed w-full h-full top-0 left-0 pointer-events-none z-0">
           <Grainient
             color1="#5dfeca"
             color2="#000000"

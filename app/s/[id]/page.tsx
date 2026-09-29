@@ -8,10 +8,9 @@ import {
   Flame,
   Check,
   Copy,
-  Lock,
   Download,
-  Terminal,
   ArrowRight,
+  Unlock,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -22,26 +21,22 @@ function formatBytes(bytes: number) {
 
 export default function RevealPage() {
   const { id } = useParams<{ id: string }>();
-  const [key, setKey] = useState<string | null>(null);
   const [metaLoading, setMetaLoading] = useState(true);
   const [exists, setExists] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
   const [secretContent, setSecretContent] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [burnOnRead, setBurnOnRead] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash;
-      const parsedKey = hash.startsWith("#k=") ? hash.replace("#k=", "") : null;
-      setKey(parsedKey);
-    }
-
     async function checkMetadata() {
       try {
         const res = await fetch(`/api/secrets/${id}/meta`);
         if (res.ok) {
+          const data = await res.json();
           setExists(true);
+          setBurnOnRead(data.burnOnRead ?? true);
         } else {
           setExists(false);
         }
@@ -56,6 +51,9 @@ export default function RevealPage() {
   }, [id]);
 
   async function handleReveal() {
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    const key = hash.startsWith("#k=") ? hash.replace("#k=", "") : null;
+
     if (!key) {
       setError("Decryption key missing from URL fragment.");
       return;
@@ -76,8 +74,12 @@ export default function RevealPage() {
       setSecretContent(plainText);
 
       window.history.replaceState(null, "", window.location.pathname);
-    } catch (err: any) {
-      setError(err.message || "Failed to decrypt. Note may be corrupted.");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to decrypt. Note may be corrupted.",
+      );
     } finally {
       setIsBurning(false);
     }
@@ -113,8 +115,8 @@ export default function RevealPage() {
   }
 
   return (
-    <div className="min-h-dvh w-full flex flex-col justify-center items-center py-6 px-3.5 sm:p-6 md:p-10 font-mono">
-      <div className="w-full max-w-4xl min-h-[80dvh] sm:min-h-0 flex flex-col justify-between bg-neutral-900/50 border border-neutral-700 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-sm my-auto">
+    <div className="w-full flex-1 flex flex-col items-center justify-start pt-8 sm:pt-12 md:pt-16 pb-14 px-3.5 sm:px-6 md:px-8 font-mono">
+      <div className="w-full max-w-4xl flex flex-col bg-neutral-900/50 border border-neutral-700 rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl backdrop-blur-sm">
         {!exists || error ? (
           <div className="text-center space-y-5 py-8 sm:py-12">
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-950/60 border border-red-800/80 rounded-2xl flex items-center justify-center mx-auto text-red-400 shadow-inner">
@@ -144,12 +146,12 @@ export default function RevealPage() {
               <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
               <div className="space-y-1">
                 <p className="font-semibold text-emerald-200">
-                  Self-Destruction Warning
+                  {burnOnRead ? "Self-Destruction Warning" : "Reusable Link"}
                 </p>
                 <p className="text-xs text-emerald-300/80 leading-relaxed">
-                  Revealing this note triggers an atomic deletion request on our
-                  storage layer. Once decrypted, it will be wiped from memory
-                  and cannot be recovered.
+                  {burnOnRead
+                    ? "Revealing this note triggers an atomic deletion request on our storage layer. Once decrypted, it will be wiped from memory and cannot be recovered."
+                    : "This secret link will remain available until its expiration window closes."}
                 </p>
               </div>
             </div>
@@ -159,10 +161,22 @@ export default function RevealPage() {
               disabled={isBurning}
               className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-[0.99]"
             >
-              <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
-              {isBurning
-                ? "Destroying on Server & Decrypting..."
-                : "Reveal & Permanently Destroy"}
+              {isBurning ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  {burnOnRead ? "Destroying on Server & Decrypting..." : "Decrypting Payload..."}
+                </>
+              ) : burnOnRead ? (
+                <>
+                  <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Reveal & Permanently Destroy
+                </>
+              ) : (
+                <>
+                  <Unlock className="w-4 h-4 sm:w-5 sm:h-5" />
+                  Decrypt Secret
+                </>
+              )}
             </button>
           </div>
         ) : (
@@ -217,7 +231,7 @@ export default function RevealPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-xs text-neutral-500 pt-1 gap-2.5 text-center sm:text-left">
               <span className="flex items-center gap-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
-                Ciphertext destroyed on server
+                {burnOnRead ? "Ciphertext destroyed on server" : "Secret link valid until expiry"}
               </span>
               <Link
                 href="/"

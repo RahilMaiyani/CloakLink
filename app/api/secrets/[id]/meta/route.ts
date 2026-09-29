@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
-import { stat } from "fs";
 
 export async function GET(
   _request: Request,
@@ -8,16 +7,18 @@ export async function GET(
 ) {
   try {
     const { id } = await context.params;
-    const exists = await redis.exists(`secret:${id}`);
+    const rawLink = await redis.get<string | object>(`secret:link:${id}`);
 
-    if (!exists) {
+    if (!rawLink) {
       return NextResponse.json({ exists: false }, { status: 404 });
     }
 
-    const ttlRemaining = await redis.ttl(`secret:${id}`);
+    const linkData = typeof rawLink === "string" ? JSON.parse(rawLink) : rawLink;
+    const ttlRemaining = await redis.ttl(`secret:link:${id}`);
 
     return NextResponse.json({
       exists: true,
+      burnOnRead: linkData.burnOnRead ?? true,
       ttlRemaining: ttlRemaining > 0 ? ttlRemaining : 0,
     });
   } catch {
