@@ -5,7 +5,7 @@ import { Lock, ShieldCheck, Terminal } from "lucide-react";
 
 export default function Navbar() {
   return (
-    <header className="w-full border-b border-neutral-800/80 bg-neutral-950/70 backdrop-blur-md sticky top-0 z-50">
+    <header className="w-full border-b border-neutral-800/80 bg-neutral-950/50 backdrop-blur-md sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group">
           <div className="p-2 bg-emerald-950/80 text-emerald-400 rounded-xl border border-emerald-800/60 shadow-inner group-hover:border-emerald-500/80 transition-colors">

@@ -91,13 +91,13 @@ export default function HomePage() {
 
   return (
     <div className="min-h-dvh w-full flex flex-col justify-center items-center py-6 px-3.5 sm:p-6 md:p-10 font-mono">
-      <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
+      <div className="w-full z-2 max-w-4xl min-h-[80dvh] sm:min-h-0 flex flex-col justify-between bg-neutral-900/50 border border-neutral-700 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-sm my-auto">
         {!shareableUrl ? (
           <form
             onSubmit={handleCreateSecret}
             className="space-y-5 sm:space-y-6"
           >
-            <div className="w-full border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition">
+            <div className="w-full border border-neutral-900 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition">
               <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400 select-none">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1.5">
@@ -127,7 +127,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="relative flex h-64 sm:h-80 md:h-96 overflow-hidden font-mono text-xs sm:text-sm">
+              <div className="relative flex h-[46dvh] min-h-85 sm:h-80 md:h-96 overflow-hidden font-mono text-xs sm:text-sm">
                 <div
                   ref={lineNumbersRef}
                   className="w-9 sm:w-12 py-3 sm:py-3.5 bg-neutral-950/80 border-r border-neutral-800 text-neutral-600 select-none overflow-hidden text-right pr-2 sm:pr-3.5 leading-6 font-medium shrink-0"

@@ -114,7 +114,7 @@ export default function RevealPage() {
 
   return (
     <div className="min-h-dvh w-full flex flex-col justify-center items-center py-6 px-3.5 sm:p-6 md:p-10 font-mono">
-      <div className="w-full z-2 max-w-4xl bg-neutral-900/90 border border-neutral-800 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-md my-auto">
+      <div className="w-full max-w-4xl min-h-[80dvh] sm:min-h-0 flex flex-col justify-between bg-neutral-900/50 border border-neutral-700 rounded-2xl p-5 sm:p-8 md:p-10 shadow-2xl backdrop-blur-sm my-auto">
         {!exists || error ? (
           <div className="text-center space-y-5 py-8 sm:py-12">
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-red-950/60 border border-red-800/80 rounded-2xl flex items-center justify-center mx-auto text-red-400 shadow-inner">
@@ -139,7 +139,7 @@ export default function RevealPage() {
             </div>
           </div>
         ) : !secretContent ? (
-          <div className="space-y-5 py-2">
+          <div className="flex-1 flex flex-col justify-center space-y-6 py-4">
             <div className="p-4 sm:p-5 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs sm:text-sm flex gap-3.5 items-start">
               <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
               <div className="space-y-1">
@@ -157,7 +157,7 @@ export default function RevealPage() {
             <button
               onClick={handleReveal}
               disabled={isBurning}
-              className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-red-950/50 cursor-pointer active:scale-[0.99]"
+              className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-[0.99]"
             >
               <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
               {isBurning
@@ -199,8 +199,8 @@ export default function RevealPage() {
                 </div>
               </div>
 
-              <div className="min-h-50 sm:min-h-65 max-h-95 sm:max-h-115 overflow-auto font-mono text-xs sm:text-sm leading-6 scheme-dark max-w-full">
-                <div className="flex min-w-full w-max min-h-50 sm:min-h-65">
+              <div className="h-[46dvh] min-h-[340px] sm:h-auto sm:min-h-[260px] sm:max-h-[460px] overflow-auto font-mono text-xs sm:text-sm leading-6 [color-scheme:dark] max-w-full">
+                <div className="flex min-w-full w-max min-h-full sm:min-h-[260px]">
                   <div className="sticky left-0 z-10 w-9 sm:w-12 py-3 sm:py-3.5 bg-neutral-950 border-r border-neutral-800 text-neutral-600 select-none text-right pr-2 sm:pr-3.5 font-medium shrink-0">
                     {secretContent.split("\n").map((_, i) => (
                       <div key={i}>{i + 1}</div>
