@@ -39,6 +39,7 @@ export default function HomePage() {
   const [isEncrypting, setIsEncrypting] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  const [generatedLinkIds, setGeneratedLinkIds] = useState<string[]>([]);
   const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
@@ -112,6 +113,7 @@ export default function HomePage() {
       }
 
       const links = data.linkIds.map((id: string) => `${window.location.origin}/s/${id}#k=${keyString}`);
+      setGeneratedLinkIds(data.linkIds);
       setGeneratedLinks(links);
       setText("");
       setPasscode("");
@@ -119,6 +121,38 @@ export default function HomePage() {
       alert("Encryption or storage failed. Please check size bounds.");
     } finally {
       setIsEncrypting(false);
+    }
+  }
+
+  async function handleRevokeLinks() {
+    try {
+      if (!generatedLinkIds) {
+        alert("Generate links first");
+        return;
+      }
+      const res = await fetch("api/secrets/revoke", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linkIds: generatedLinkIds
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 429) {
+          alert(data.error);
+          return;
+        }
+        throw new Error(data.error || "Storage failed");
+      }
+      alert("Link Revoked Successfully.")
+      setGeneratedLinkIds([]);
+      setGeneratedLinks([]);
+      setText("");
+      setPasscode("");
+    }
+    catch {
+      alert("Link revokation failed.")
     }
   }
 
@@ -472,9 +506,17 @@ export default function HomePage() {
                   {copiedAll ? "All Links Copied" : "Copy All Links"}
                 </button>
               )}
+              {generatedLinks && (
+                <button
+                  onClick={handleRevokeLinks}
+                  className={`w-full ${generatedLinks.length === 1 ? "sm:flex-2" : "sm:w-auto"} h-11 sm:h-12 px-6 bg-red-700 hover:bg-red-600 text-red-200 rounded-xl text-xs sm:text-sm font-bold items-center justify-center transition cursor-pointer active:scale-[0.99]`}
+                >
+                  Revoke Link{generatedLinks.length > 1 ? "s" : ""}
+                </button>
+              )}
               <button
                 onClick={() => setGeneratedLinks([])}
-                className={`w-full ${generatedLinks.length === 1 ? "sm:flex-1" : "sm:w-auto"
+                className={`w-full ${generatedLinks.length === 1 ? "sm:flex-2" : "sm:w-auto"
                   } h-11 sm:h-12 px-6 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]`}
               >
                 <RefreshCw className="w-4 h-4" />
@@ -485,6 +527,6 @@ export default function HomePage() {
 
         )}
       </div>
-    </div>
+    </div >
   );
 }
