@@ -6,38 +6,51 @@ export async function POST(req: Request) {
         const body = await req.json();
         const linkIds: string[] | undefined = body?.linkIds;
 
-        if (!linkIds) {
+        if (!Array.isArray(linkIds) || linkIds.length === 0) {
             return NextResponse.json(
-                { error: "LinkId(s) not found." },
+                { error: "Valid linkIds array required." },
+                { status: 400 },
+            );
+        }
+
+        let masterId: string | null = null;
+        for (const id of linkIds) {
+            const raw = await redis.get<string | object>(`secret:link:${id}`);
+            if (raw) {
+                const data = typeof raw === "string" ? JSON.parse(raw) : raw;
+                masterId = data.masterId;
+                break;
+            }
+        }
+
+        if (!masterId) {
+            return NextResponse.json(
+                { error: "Secret has already expired or been destroyed." },
                 { status: 404 },
             );
         }
 
-        const rawLink = await redis.get<string | object>(`secret:link:${linkIds[0]}`);
-        if (!rawLink) {
-            return NextResponse.json({ error: "Link invalid or do not exists" }, { status: 404 });
-        }
-
-        const linkData = typeof rawLink === "string" ? JSON.parse(rawLink) : rawLink;
-        const masterId = linkData.masterId;
-
+        const allRefs = await redis.smembers(`secret:refs:${masterId}`);
         const pipeline = redis.pipeline();
 
-        for (let link of linkIds) {
+        const linksToDelete = new Set([...linkIds, ...allRefs]);
+        for (const link of linksToDelete) {
             pipeline.del(`secret:link:${link}`);
         }
+
         pipeline.del(`secret:payload:${masterId}`);
         pipeline.del(`secret:refs:${masterId}`);
 
         await pipeline.exec();
 
-        return NextResponse.json({ message: "Links successfully revoked." }, { status: 200 });
-    }
-    catch {
         return NextResponse.json(
-            { error: "Failed to revoke links" },
+            { message: "Secret and all associated links successfully revoked." },
+            { status: 200 },
+        );
+    } catch {
+        return NextResponse.json(
+            { error: "Failed to revoke links." },
             { status: 500 },
         );
-
     }
 }

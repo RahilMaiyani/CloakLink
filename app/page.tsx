@@ -37,6 +37,7 @@ export default function HomePage() {
   const [linkCount, setLinkCount] = useState(1);
 
   const [isEncrypting, setIsEncrypting] = useState(false);
+  const [isRevoking, setIsRevoking] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const [generatedLinkIds, setGeneratedLinkIds] = useState<string[]>([]);
@@ -125,15 +126,17 @@ export default function HomePage() {
   }
 
   async function handleRevokeLinks() {
+    if (!generatedLinkIds.length) {
+      alert("Generate links first");
+      return;
+    }
+    setIsRevoking(true);
     try {
-      if (!generatedLinkIds) {
-        alert("Generate links first");
-        return;
-      }
-      const res = await fetch("api/secrets/revoke", {
-        method: "POST", headers: { "Content-Type": "application/json" },
+      const res = await fetch("/api/secrets/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          linkIds: generatedLinkIds
+          linkIds: generatedLinkIds,
         }),
       });
 
@@ -143,16 +146,17 @@ export default function HomePage() {
           alert(data.error);
           return;
         }
-        throw new Error(data.error || "Storage failed");
+        throw new Error(data.error || "Revocation failed");
       }
-      alert("Link Revoked Successfully.")
+      alert("Secret revoked and permanently destroyed.");
       setGeneratedLinkIds([]);
       setGeneratedLinks([]);
       setText("");
       setPasscode("");
-    }
-    catch {
-      alert("Link revokation failed.")
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Link revocation failed.");
+    } finally {
+      setIsRevoking(false);
     }
   }
 
@@ -506,18 +510,31 @@ export default function HomePage() {
                   {copiedAll ? "All Links Copied" : "Copy All Links"}
                 </button>
               )}
-              {generatedLinks && (
+              {generatedLinks.length > 0 && (
                 <button
                   onClick={handleRevokeLinks}
-                  className={`w-full ${generatedLinks.length === 1 ? "sm:flex-2" : "sm:w-auto"} h-11 sm:h-12 px-6 bg-red-700 hover:bg-red-600 text-red-200 rounded-xl text-xs sm:text-sm font-bold items-center justify-center transition cursor-pointer active:scale-[0.99]`}
+                  disabled={isRevoking}
+                  className="w-full sm:flex-1 h-11 sm:h-12 px-5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/80 disabled:opacity-50 text-red-300 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition cursor-pointer active:scale-[0.99]"
                 >
-                  Revoke Link{generatedLinks.length > 1 ? "s" : ""}
+                  {isRevoking ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                      Revoking...
+                    </>
+                  ) : (
+                    <>
+                      <Flame className="w-4 h-4 text-red-400" />
+                      Revoke {generatedLinks.length > 1 ? "All Links" : "Link"}
+                    </>
+                  )}
                 </button>
               )}
               <button
-                onClick={() => setGeneratedLinks([])}
-                className={`w-full ${generatedLinks.length === 1 ? "sm:flex-2" : "sm:w-auto"
-                  } h-11 sm:h-12 px-6 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]`}
+                onClick={() => {
+                  setGeneratedLinks([]);
+                  setGeneratedLinkIds([]);
+                }}
+                className="w-full sm:flex-1 h-11 sm:h-12 px-5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
                 <RefreshCw className="w-4 h-4" />
                 New Secret
