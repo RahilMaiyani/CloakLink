@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef } from "react";
-import { encryptSecret } from "@/lib/crypto";
+import { encryptSecret, hashPasscode, generateSalt } from "@/lib/crypto";
 import {
   Copy,
   Check,
@@ -17,6 +17,7 @@ import {
   Flame,
   Hourglass,
   Layers,
+  KeyRound,
 } from "lucide-react";
 
 
@@ -39,6 +40,8 @@ export default function HomePage() {
   const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
+
+  const [passcode, setPasscode] = useState("");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -70,10 +73,31 @@ export default function HomePage() {
     try {
       const { ciphertext, iv, keyString } = await encryptSecret(text);
 
+      if (passcode && passcode.length !== 6) {
+        alert("Passcode must be exactly 6 digits (or leave blank).");
+        return;
+      }
+
+      let passcodeHash: string | null = null;
+      let passcodeSalt: string | null = null;
+
+      if (passcode.length === 6) {
+        passcodeSalt = generateSalt();
+        passcodeHash = await hashPasscode(passcode, passcodeSalt);
+      }
+
       const res = await fetch("/api/secrets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ciphertext, iv, ttl, burnOnRead, linkCount }),
+        body: JSON.stringify({
+          ciphertext,
+          iv,
+          ttl,
+          burnOnRead,
+          linkCount,
+          passcodeHash,
+          passcodeSalt
+        }),
       });
 
       const data = await res.json();
@@ -88,6 +112,7 @@ export default function HomePage() {
       const links = data.linkIds.map((id: string) => `${window.location.origin}/s/${id}#k=${keyString}`);
       setGeneratedLinks(links);
       setText("");
+      setPasscode("");
     } catch {
       alert("Encryption or storage failed. Please check size bounds.");
     } finally {
@@ -299,6 +324,35 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
+                  {/* 6-Digit Passcode Protection */}
+                  <div className="pt-2 border-t border-neutral-900 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                          <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
+                          6-Digit Passcode Gate (Optional)
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          Requires a 6-digit PIN to decrypt. Note self-destructs after 3 wrong attempts.
+                        </div>
+                      </div>
+                    </div>
+
+                    <input
+                      type="password"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={6}
+                      value={passcode}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        setPasscode(val);
+                      }}
+                      placeholder="Enter 6-digit PIN (e.g. 749201)"
+                      className="w-full h-11 bg-neutral-900/80 border border-neutral-800 focus:border-emerald-500 rounded-xl px-3.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none font-mono tracking-widest transition"
+                    />
+                  </div>
+
                 </div>
               </div>
 
@@ -344,6 +398,13 @@ export default function HomePage() {
                       : "1 Reusable link"
                     : `${linkCount} Independent links`}
                 </span>
+                {passcode.length === 6 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-emerald-400/90 font-medium">PIN Protected (3 Strikes)</span>
+                  </>
+                )}
+
               </div>
             </div>
 

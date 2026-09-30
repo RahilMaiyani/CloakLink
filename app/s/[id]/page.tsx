@@ -11,7 +11,10 @@ import {
   Download,
   ArrowRight,
   Unlock,
+  KeyRound,
+  AlertTriangle,
 } from "lucide-react";
+
 import Link from "next/link";
 
 function formatBytes(bytes: number) {
@@ -29,14 +32,22 @@ export default function RevealPage() {
   const [copied, setCopied] = useState(false);
   const [burnOnRead, setBurnOnRead] = useState(true);
 
+  const [hasPasscode, setHasPasscode] = useState(false);
+  const [passcode, setPasscode] = useState("");
+  const [passcodeError, setPasscodeError] = useState<string | null>(null);
+  const [remainingStrikes, setRemainingStrikes] = useState<number | null>(null);
+  const [shake, setShake] = useState(false);
+
+
   useEffect(() => {
     async function checkMetadata() {
       try {
-        const res = await fetch(`/api/secrets/${id}/meta`);
+        const res = await fetch(`/api/secrets/${id}/meta`, { method: "GET" });
         if (res.ok) {
           const data = await res.json();
           setExists(true);
           setBurnOnRead(data.burnOnRead ?? true);
+          setHasPasscode(Boolean(data.hasPasscode));
         } else {
           setExists(false);
         }
@@ -50,7 +61,8 @@ export default function RevealPage() {
     checkMetadata();
   }, [id]);
 
-  async function handleReveal() {
+  async function handleReveal(e?: React.SubmitEvent) {
+    if (e) e.preventDefault();
     const hash = typeof window !== "undefined" ? window.location.hash : "";
     const key = hash.startsWith("#k=") ? hash.replace("#k=", "") : null;
 
@@ -59,9 +71,21 @@ export default function RevealPage() {
       return;
     }
 
+    if (hasPasscode && passcode.length !== 6) {
+      setPasscodeError("Enter the full 6-digit PIN.");
+      return;
+    }
+
     setIsBurning(true);
+    setPasscodeError(null);
+
     try {
-      const res = await fetch(`/api/secrets/${id}/burn`, { method: "POST" });
+      const res = await fetch(`/api/secrets/${id}/burn`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ passcode: hasPasscode ? passcode : null })
+      });
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -142,42 +166,113 @@ export default function RevealPage() {
           </div>
         ) : !secretContent ? (
           <div className="flex-1 flex flex-col justify-center space-y-6 py-4">
-            <div className="p-4 sm:p-5 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs sm:text-sm flex gap-3.5 items-start">
-              <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
-              <div className="space-y-1">
-                <p className="font-semibold text-emerald-200">
-                  {burnOnRead ? "Self-Destruction Warning" : "Reusable Link"}
-                </p>
-                <p className="text-xs text-emerald-300/80 leading-relaxed">
-                  {burnOnRead
-                    ? "Revealing this note triggers an atomic deletion request on our storage layer. Once decrypted, it will be wiped from memory and cannot be recovered."
-                    : "This secret link will remain available until its expiration window closes."}
-                </p>
-              </div>
-            </div>
+            {hasPasscode ? (
+              <form onSubmit={handleReveal} className="space-y-4">
+                {/* Passcode Security Warning */}
+                <div className="p-4 sm:p-5 bg-neutral-950/90 border border-neutral-800 rounded-xl space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-200">
+                    <KeyRound className="w-4 h-4 text-emerald-400" />
+                    Passcode Protected Secret
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    The sender locked this secret with a 6-digit PIN.{" "}
+                    <span className="text-amber-400/90 font-medium">
+                      3 incorrect attempts will permanently self-destruct the note.
+                    </span>
+                  </p>
+                  {remainingStrikes !== null && (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/40 border border-amber-800/60 rounded-lg text-[11px] font-semibold text-amber-300">
+                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                      {remainingStrikes} {remainingStrikes === 1 ? "attempt" : "attempts"} remaining
+                    </div>
+                  )}
+                </div>
 
-            <button
-              onClick={handleReveal}
-              disabled={isBurning}
-              className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-[0.99]"
-            >
-              {isBurning ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {burnOnRead ? "Destroying on Server & Decrypting..." : "Decrypting Payload..."}
-                </>
-              ) : burnOnRead ? (
-                <>
-                  <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Reveal & Permanently Destroy
-                </>
-              ) : (
-                <>
-                  <Unlock className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Decrypt Secret
-                </>
-              )}
-            </button>
+                {/* 6-Digit PIN Input */}
+                <div className={`space-y-1.5 ${shake ? "animate-pulse" : ""}`}>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    value={passcode}
+                    onChange={(e) => {
+                      setPasscode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      if (passcodeError) setPasscodeError(null);
+                    }}
+                    placeholder="Enter 6-digit PIN"
+                    autoFocus
+                    className={`w-full h-12 bg-neutral-950 border ${passcodeError
+                      ? "border-red-500/80 focus:border-red-500"
+                      : "border-neutral-800 focus:border-emerald-500"
+                      } rounded-xl px-4 text-sm text-center tracking-[0.35em] font-mono text-neutral-100 placeholder:text-neutral-600 focus:outline-none transition`}
+                  />
+                  {passcodeError && (
+                    <p className="text-[11px] text-red-400 text-center font-medium">
+                      {passcodeError}
+                    </p>
+                  )}
+                </div>
+
+                {/* Unlock Button */}
+                <button
+                  type="submit"
+                  disabled={isBurning || passcode.length !== 6}
+                  className="w-full h-12 sm:h-14 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-neutral-950 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-emerald-950/40 cursor-pointer active:scale-[0.99]"
+                >
+                  {isBurning ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin" />
+                      Verifying & Decrypting...
+                    </>
+                  ) : (
+                    <>
+                      <Unlock className="w-4 h-4 text-neutral-950" />
+                      Unlock Secret
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : (
+              <>
+                <div className="p-4 sm:p-5 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs sm:text-sm flex gap-3.5 items-start">
+                  <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
+                  <div className="space-y-1">
+                    <p className="font-semibold text-emerald-200">
+                      {burnOnRead ? "Self-Destruction Warning" : "Reusable Link"}
+                    </p>
+                    <p className="text-xs text-emerald-300/80 leading-relaxed">
+                      {burnOnRead
+                        ? "Revealing this note triggers an atomic deletion request on our storage layer. Once decrypted, it will be wiped from memory and cannot be recovered."
+                        : "This secret link will remain available until its expiration window closes."}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleReveal()}
+                  disabled={isBurning}
+                  className="w-full h-12 sm:h-14 bg-emerald-700/90 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2.5 transition shadow-lg shadow-emerald-950/50 cursor-pointer active:scale-[0.99]"
+                >
+                  {isBurning ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {burnOnRead ? "Destroying on Server & Decrypting..." : "Decrypting Payload..."}
+                    </>
+                  ) : burnOnRead ? (
+                    <>
+                      <Flame className="w-4 h-4 sm:w-5 sm:h-5" />
+                      Reveal & Permanently Destroy
+                    </>
+                  ) : (
+                    <>
+                      <Unlock className="w-4 h-4 sm:w-5 sm:h-5" />
+                      Decrypt Secret
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="space-y-5">

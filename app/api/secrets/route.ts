@@ -7,7 +7,7 @@ const MAX_LINK_COUNT = 3;
 
 export async function POST(request: Request) {
   try {
-    const { ciphertext, iv, ttl, burnOnRead = true, linkCount = 1 } = await request.json();
+    const { ciphertext, iv, ttl, burnOnRead = true, linkCount = 1, passcodeHash = null, passcodeSalt = null } = await request.json();
 
     if (!ciphertext || !iv || !ttl) {
       return NextResponse.json(
@@ -38,7 +38,13 @@ export async function POST(request: Request) {
     pipeline.set(`secret:payload:${masterId}`, JSON.stringify({ ciphertext, iv }), { ex: ttlSeconds });
 
     for (const linkId of linkIds) {
-      pipeline.set(`secret:link:${linkId}`, JSON.stringify({ masterId, burnOnRead: Boolean(burnOnRead) }), { ex: ttlSeconds });
+      pipeline.set(`secret:link:${linkId}`, JSON.stringify({
+        masterId,
+        burnOnRead: Boolean(burnOnRead),
+        passcodeHash: passcodeHash || null,
+        passcodeSalt: passcodeSalt || null,
+        strikes: 0,
+      }), { ex: ttlSeconds });
     }
     // @ts-expect-error Upstash Redis pipeline sadd spread arguments
     pipeline.sadd(`secret:refs:${masterId}`, ...linkIds);

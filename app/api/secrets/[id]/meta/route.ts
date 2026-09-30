@@ -18,6 +18,7 @@ export async function GET(
 
     return NextResponse.json({
       exists: true,
+      hasPasscode: Boolean(linkData.passcodeHash),
       burnOnRead: linkData.burnOnRead ?? true,
       ttlRemaining: ttlRemaining > 0 ? ttlRemaining : 0,
     });

@@ -82,3 +82,17 @@ export async function decryptSecret(
 
   return new TextDecoder().decode(decryptedBuffer);
 }
+
+export async function hashPasscode(passcode: string, salt: string): Promise<string> {
+  const data = new TextEncoder().encode(passcode + salt);
+
+  const hashBuffer = await window.crypto.subtle.digest("SHA-256", data);
+
+  return Array.from(new Uint8Array(hashBuffer)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+export function generateSalt(): string {
+  const bytes = window.crypto.getRandomValues(new Uint8Array(16));
+
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}

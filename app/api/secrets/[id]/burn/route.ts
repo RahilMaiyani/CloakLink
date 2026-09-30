@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
+import crypto from 'crypto';
 
 export async function POST(
   _request: Request,
@@ -7,6 +8,8 @@ export async function POST(
 ) {
   try {
     const { id } = await context.params;
+    const body = await _request.json().catch(() => { });
+    const passcode = typeof body?.passcode === "string" ? body.passcode.trim() : null;
 
     const rawLink = await redis.get<string | object>(`secret:link:${id}`);
 
@@ -19,7 +22,44 @@ export async function POST(
 
     const linkData = typeof rawLink === "string" ? JSON.parse(rawLink) : rawLink;
 
-    const { masterId, burnOnRead } = linkData;
+    const { masterId, burnOnRead, passcodeHash, passcodeSalt } = linkData;
+
+    if (passcodeHash) {
+      const computeHash = passcode && passcodeSalt ? crypto.createHash("sha256").update(passcode + passcodeSalt).digest("hex") : null;
+
+      if (!passcode || computeHash != passcodeHash) {
+        const strikes = (linkData.strikes || 0) + 1;
+        linkData.strikes = strikes;
+
+
+        if (strikes >= 3) {
+          await redis.del(`secret:link:${id}`);
+          await redis.srem(`secret:refs:${masterId}`, id);
+
+
+          const remainingRefs = await redis.scard(`secret:refs:${masterId}`);
+          if (remainingRefs === 0) {
+            await redis.del(`secret:payload:${masterId}`);
+            await redis.del(`secret:refs:${masterId}`);
+          }
+          return NextResponse.json(
+            { error: "Maximum attempts reached. Secret destroyed." },
+            { status: 410 },
+          );
+        }
+
+        const ttlRemaining = await redis.ttl(`secret:link:${id}`);
+        await redis.set(`secret:link:${id}`, JSON.stringify(linkData), {
+          ex: Math.max(1, ttlRemaining),
+        });
+        return NextResponse.json(
+          { error: "Incorrect passcode", remainingStrikes: 3 - strikes },
+          { status: 401 },
+        );
+
+
+      }
+    }
 
     if (burnOnRead) {
       await redis.del(`secret:link:${id}`);
