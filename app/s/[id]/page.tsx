@@ -14,6 +14,7 @@ import {
   KeyRound,
   AlertTriangle,
 } from "lucide-react";
+import { PasscodeInput } from "@/components/PasscodeInput";
 
 import Link from "next/link";
 
@@ -48,7 +49,11 @@ export default function RevealPage() {
           setExists(true);
           setBurnOnRead(data.burnOnRead ?? true);
           setHasPasscode(Boolean(data.hasPasscode));
-        } else {
+          if (data.remainingStrikes !== undefined) {
+            setRemainingStrikes(data.remainingStrikes);
+          }
+        }
+        else {
           setExists(false);
         }
       } catch {
@@ -87,6 +92,18 @@ export default function RevealPage() {
       });
 
       const data = await res.json();
+
+      if (res.status === 401) {
+        const remaining = data.remainingStrikes ?? (remainingStrikes ? remainingStrikes - 1 : 2);
+        setRemainingStrikes(remaining);
+        setPasscodeError(
+          `Incorrect passcode. ${remaining} ${remaining === 1 ? "attempt" : "attempts"} remaining before self-destruction.`
+        );
+        setPasscode("");
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(
@@ -167,48 +184,45 @@ export default function RevealPage() {
         ) : !secretContent ? (
           <div className="flex-1 flex flex-col justify-center space-y-6 py-4">
             {hasPasscode ? (
-              <form onSubmit={handleReveal} className="space-y-4">
-                {/* Passcode Security Warning */}
-                <div className="p-4 sm:p-5 bg-neutral-950/90 border border-neutral-800 rounded-xl space-y-2">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-neutral-200">
-                    <KeyRound className="w-4 h-4 text-emerald-400" />
-                    Passcode Protected Secret
+              <form onSubmit={handleReveal} className="space-y-6 py-2">
+                {/* Passcode Security Banner */}
+                <div className="p-4 sm:p-5 bg-neutral-950/90 border border-neutral-800 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-neutral-200">
+                      <KeyRound className="w-4 h-4 text-emerald-400" />
+                      Passcode Protected Secret
+                    </div>
+                    {remainingStrikes !== null && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/50 border border-amber-800/60 rounded-lg text-[11px] font-semibold text-amber-300">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                        {remainingStrikes} of 3 attempts left
+                      </div>
+                    )}
                   </div>
                   <p className="text-xs text-neutral-400 leading-relaxed">
-                    The sender locked this secret with a 6-digit PIN.{" "}
+                    The sender protected this note with a 6-digit PIN.{" "}
                     <span className="text-amber-400/90 font-medium">
-                      3 incorrect attempts will permanently self-destruct the note.
+                      Entering 3 incorrect attempts triggers instant self-destruction.
                     </span>
                   </p>
-                  {remainingStrikes !== null && (
-                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-950/40 border border-amber-800/60 rounded-lg text-[11px] font-semibold text-amber-300">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                      {remainingStrikes} {remainingStrikes === 1 ? "attempt" : "attempts"} remaining
-                    </div>
-                  )}
                 </div>
 
-                {/* 6-Digit PIN Input */}
-                <div className={`space-y-1.5 ${shake ? "animate-pulse" : ""}`}>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
+                {/* 6-Digit OTP Box Input */}
+                <div className="space-y-3">
+                  <PasscodeInput
                     value={passcode}
-                    onChange={(e) => {
-                      setPasscode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                    onChange={(val) => {
+                      setPasscode(val);
                       if (passcodeError) setPasscodeError(null);
                     }}
-                    placeholder="Enter 6-digit PIN"
+                    disabled={isBurning}
+                    hasError={Boolean(passcodeError)}
                     autoFocus
-                    className={`w-full h-12 bg-neutral-950 border ${passcodeError
-                      ? "border-red-500/80 focus:border-red-500"
-                      : "border-neutral-800 focus:border-emerald-500"
-                      } rounded-xl px-4 text-sm text-center tracking-[0.35em] font-mono text-neutral-100 placeholder:text-neutral-600 focus:outline-none transition`}
+                    shake={shake}
                   />
+
                   {passcodeError && (
-                    <p className="text-[11px] text-red-400 text-center font-medium">
+                    <p className="text-xs text-red-400 text-center font-medium animate-fadeIn">
                       {passcodeError}
                     </p>
                   )}
@@ -228,12 +242,13 @@ export default function RevealPage() {
                   ) : (
                     <>
                       <Unlock className="w-4 h-4 text-neutral-950" />
-                      Unlock Secret
+                      Unlock & Decrypt Secret
                     </>
                   )}
                 </button>
               </form>
             ) : (
+
               <>
                 <div className="p-4 sm:p-5 bg-emerald-950/30 border border-emerald-800/40 rounded-xl text-emerald-300 text-xs sm:text-sm flex gap-3.5 items-start">
                   <ShieldAlert className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />

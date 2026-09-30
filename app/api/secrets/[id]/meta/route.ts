@@ -19,9 +19,11 @@ export async function GET(
     return NextResponse.json({
       exists: true,
       hasPasscode: Boolean(linkData.passcodeHash),
+      remainingStrikes: linkData.passcodeHash ? Math.max(0, 3 - (linkData.strikes || 0)) : null,
       burnOnRead: linkData.burnOnRead ?? true,
       ttlRemaining: ttlRemaining > 0 ? ttlRemaining : 0,
     });
+
   } catch {
     return NextResponse.json(
       { error: "Internal server error" },

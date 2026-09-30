@@ -19,6 +19,8 @@ import {
   Layers,
   KeyRound,
 } from "lucide-react";
+import { PasscodeInput } from "@/components/PasscodeInput";
+
 
 
 const MAX_BYTES = 512 * 1024;
@@ -244,70 +246,70 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Advanced Settings Accordion Body (Smooth Expand from Bottom) */}
+              {/* Advanced Settings Accordion Body (Spacious & Decongested) */}
               <div
                 className={`transition-all duration-300 ease-in-out overflow-hidden ${advancedOpen
-                  ? "max-h-96 opacity-100 mt-4"
+                  ? "max-h-[900px] opacity-100 mt-4"
                   : "max-h-0 opacity-0 mt-0 pointer-events-none"
                   }`}
               >
-                <div className="p-4 sm:p-5 bg-neutral-950/90 border border-neutral-800 rounded-xl space-y-4">
-                  {/* Destruction Policy */}
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">
+                <div className="space-y-4">
+                  {/* Card 1: Destruction Policy */}
+                  <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
                       Destruction Policy
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <button
                         type="button"
                         onClick={() => setBurnOnRead(true)}
-                        className={`p-3 rounded-lg border text-left flex items-start gap-2.5 transition cursor-pointer ${burnOnRead
-                          ? "bg-emerald-950/40 border-emerald-600 text-neutral-200"
-                          : "bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition cursor-pointer ${burnOnRead
+                          ? "bg-emerald-950/40 border-emerald-500/70 text-neutral-100 shadow-[0_0_14px_rgba(16,185,129,0.12)]"
+                          : "bg-neutral-900/40 border-neutral-800/80 text-neutral-400 hover:border-neutral-700"
                           }`}
                       >
                         <Flame className={`w-4 h-4 mt-0.5 shrink-0 ${burnOnRead ? "text-emerald-400" : "text-neutral-500"}`} />
                         <div>
                           <div className="text-xs font-semibold">Delete after reading</div>
-                          <div className="text-[11px] text-neutral-500">Link dies instantly once viewed</div>
+                          <div className="text-[11px] text-neutral-500 mt-0.5">Link destroys instantly once opened</div>
                         </div>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setBurnOnRead(false)}
-                        className={`p-3 rounded-lg border text-left flex items-start gap-2.5 transition cursor-pointer ${!burnOnRead
-                          ? "bg-emerald-950/40 border-emerald-600 text-neutral-200"
-                          : "bg-neutral-900/50 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition cursor-pointer ${!burnOnRead
+                          ? "bg-emerald-950/40 border-emerald-500/70 text-neutral-100 shadow-[0_0_14px_rgba(16,185,129,0.12)]"
+                          : "bg-neutral-900/40 border-neutral-800/80 text-neutral-400 hover:border-neutral-700"
                           }`}
                       >
                         <Hourglass className={`w-4 h-4 mt-0.5 shrink-0 ${!burnOnRead ? "text-emerald-400" : "text-neutral-500"}`} />
                         <div>
                           <div className="text-xs font-semibold">Destroy on expire only</div>
-                          <div className="text-[11px] text-neutral-500">Reusable until time runs out</div>
+                          <div className="text-[11px] text-neutral-500 mt-0.5">Reusable until time window elapses</div>
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  {/* Multi-Link Stepper */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-neutral-900">
+                  {/* Card 2: Generated Links (Pointer References) */}
+                  <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                      <div className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                      <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-emerald-400" />
-                        Generated Links (Pointer References)
+                        Multi-Link Generation
                       </div>
-                      <div className="text-[11px] text-neutral-500">
-                        Create 1-3 independent links sharing 1 encrypted master payload
+                      <div className="text-[11px] text-neutral-500 mt-0.5">
+                        Create 1–3 independent links sharing 1 encrypted master payload
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 self-start sm:self-auto bg-neutral-900 border border-neutral-800 rounded-lg p-1">
+                    <div className="flex items-center gap-2 self-start sm:self-auto bg-neutral-900/90 border border-neutral-800 rounded-lg p-1">
                       <button
                         type="button"
                         disabled={linkCount <= 1}
                         onClick={() => setLinkCount((c) => Math.max(1, c - 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded-md bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800 text-neutral-300 transition cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-md bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 text-neutral-300 transition cursor-pointer"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -318,43 +320,47 @@ export default function HomePage() {
                         type="button"
                         disabled={linkCount >= 3}
                         onClick={() => setLinkCount((c) => Math.min(3, c + 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded-md bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 disabled:hover:bg-neutral-800 text-neutral-300 transition cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center rounded-md bg-neutral-800 hover:bg-neutral-700 disabled:opacity-30 text-neutral-300 transition cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
-                  {/* 6-Digit Passcode Protection */}
-                  <div className="pt-2 border-t border-neutral-900 space-y-2">
+
+                  {/* Card 3: 6-Digit Passcode Gate */}
+                  <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-3.5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                        <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
                           <KeyRound className="w-3.5 h-3.5 text-emerald-400" />
                           6-Digit Passcode Gate (Optional)
                         </div>
-                        <div className="text-[11px] text-neutral-500">
-                          Requires a 6-digit PIN to decrypt. Note self-destructs after 3 wrong attempts.
+                        <div className="text-[11px] text-neutral-500 mt-0.5">
+                          Self-destructs if recipient fails 3 passcode attempts
                         </div>
                       </div>
+
+                      {passcode.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setPasscode("")}
+                          className="text-[11px] text-neutral-400 hover:text-red-400 transition cursor-pointer"
+                        >
+                          Clear PIN
+                        </button>
+                      )}
                     </div>
 
-                    <input
-                      type="password"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      maxLength={6}
-                      value={passcode}
-                      onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                        setPasscode(val);
-                      }}
-                      placeholder="Enter 6-digit PIN (e.g. 749201)"
-                      className="w-full h-11 bg-neutral-900/80 border border-neutral-800 focus:border-emerald-500 rounded-xl px-3.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none font-mono tracking-widest transition"
-                    />
+                    <div className="pt-1">
+                      <PasscodeInput
+                        value={passcode}
+                        onChange={setPasscode}
+                      />
+                    </div>
                   </div>
-
                 </div>
               </div>
+
 
               {/* Submit Button */}
               <button
