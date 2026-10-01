@@ -7,7 +7,15 @@ const MAX_LINK_COUNT = 3;
 
 export async function POST(request: Request) {
   try {
-    const { ciphertext, iv, ttl, burnOnRead = true, linkCount = 1, passcodeHash = null, passcodeSalt = null } = await request.json();
+    const { ciphertext,
+      iv,
+      ttl,
+      burnOnRead = true,
+      linkCount = 1,
+      passcodeHash = null,
+      passcodeSalt = null,
+      creator = null,
+    } = await request.json();
 
     if (!ciphertext || !iv || !ttl) {
       return NextResponse.json(
@@ -27,6 +35,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Link count invalid." }, { status: 400 });
     }
 
+    let sanitizedCreator: { name?: string; email?: string; subject?: string; } | null = null;
+    if (creator && typeof creator === 'object') {
+      const name = typeof creator.name === 'string' ? creator.name.trim().slice(0, 60) : "";
+      const email = typeof creator.email === 'string' ? creator.email.trim().slice(0, 100) : "";
+      const subject = typeof creator.subject === 'string' ? creator.subject.trim().slice(0, 120) : "";
+
+      if (name || email || subject) {
+        sanitizedCreator = {
+          ...(name ? { name } : {}),
+          ...(email ? { email } : {}),
+          ...(subject ? { subject } : {}),
+        };
+      }
+    }
+
     const allowedTtls: number[] = [300, 3600, 86400, 604800];
     const ttlSeconds: number = allowedTtls.includes(ttl) ? ttl : 86400;
 
@@ -44,6 +67,7 @@ export async function POST(request: Request) {
         passcodeHash: passcodeHash || null,
         passcodeSalt: passcodeSalt || null,
         strikes: 0,
+        creator: sanitizedCreator,
       }), { ex: ttlSeconds });
     }
     // @ts-expect-error Upstash Redis pipeline sadd spread arguments

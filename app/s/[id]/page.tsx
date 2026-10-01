@@ -13,6 +13,7 @@ import {
   Unlock,
   KeyRound,
   AlertTriangle,
+  User, Mail, Tag
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 
@@ -39,6 +40,9 @@ export default function RevealPage() {
   const [remainingStrikes, setRemainingStrikes] = useState<number | null>(null);
   const [shake, setShake] = useState(false);
 
+  const [creator, setCreator] = useState<{ name?: string; email?: string; subject?: string } | null>(null);
+
+
 
   useEffect(() => {
     async function checkMetadata() {
@@ -47,6 +51,7 @@ export default function RevealPage() {
         if (res.ok) {
           const data = await res.json();
           setExists(true);
+          setCreator(data.creator || null);
           setBurnOnRead(data.burnOnRead ?? true);
           setHasPasscode(Boolean(data.hasPasscode));
           if (data.remainingStrikes !== undefined) {
@@ -185,6 +190,29 @@ export default function RevealPage() {
           </div>
         ) : !secretContent ? (
           <div className="flex-1 flex flex-col justify-center space-y-6 py-4">
+            {/* Optional Sender Attribution Card */}
+            {creator && (creator.subject || creator.name || creator.email) && (
+              <div className="p-3.5 sm:p-4 bg-neutral-950/70 border border-neutral-800/80 rounded-xl space-y-2 mb-4">
+                {creator.subject && (
+                  <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-100">
+                    <Tag className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span className="truncate">{creator.subject}</span>
+                  </div>
+                )}
+                {(creator.name || creator.email) && (
+                  <div className="flex items-center gap-2 text-[11px] sm:text-xs text-neutral-400">
+                    <User className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                    <span>
+                      Sent by{" "}
+                      {creator.name && <strong className="text-neutral-200 font-semibold">{creator.name}</strong>}
+                      {creator.name && creator.email && " "}
+                      {creator.email && <span className="text-neutral-500 font-mono">({creator.email})</span>}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
             {hasPasscode ? (
               <form onSubmit={handleReveal} className="space-y-6 py-2">
                 {/* Passcode Security Banner */}

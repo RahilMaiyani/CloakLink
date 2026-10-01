@@ -18,6 +18,9 @@ import {
   Hourglass,
   Layers,
   KeyRound,
+  User,
+  Mail,
+  Tag,
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 
@@ -46,6 +49,11 @@ export default function HomePage() {
   const [copiedAll, setCopiedAll] = useState(false);
 
   const [passcode, setPasscode] = useState("");
+
+  const [creatorName, setCreatorName] = useState("");
+  const [creatorEmail, setCreatorEmail] = useState("");
+  const [creatorSubject, setCreatorSubject] = useState("");
+
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -90,6 +98,14 @@ export default function HomePage() {
         passcodeHash = await hashPasscode(passcode, passcodeSalt);
       }
 
+      const creator = (creatorName.trim() || creatorEmail.trim() || creatorSubject.trim())
+        ? {
+          name: creatorName.trim() || undefined,
+          email: creatorEmail.trim() || undefined,
+          subject: creatorSubject.trim() || undefined,
+        }
+        : null;
+
       const res = await fetch("/api/secrets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,7 +116,8 @@ export default function HomePage() {
           burnOnRead,
           linkCount,
           passcodeHash,
-          passcodeSalt
+          passcodeSalt,
+          creator
         }),
       });
 
@@ -156,6 +173,15 @@ export default function HomePage() {
     } finally {
       setIsRevoking(false);
     }
+  }
+
+  function handleNewSecret() {
+    setText("");
+    setGeneratedLinks([]);
+    setGeneratedLinkIds([]);
+    setCreatorName("");
+    setCreatorEmail("");
+    setCreatorSubject("");
   }
 
   function handleCopy(url: string, index: number) {
@@ -273,7 +299,7 @@ export default function HomePage() {
                   >
                     <span className="flex items-center gap-2">
                       <Settings2 className="w-4 h-4 text-emerald-400" />
-                      Advanced Policy & Links
+                      Advanced Options
                     </span>
                     <ChevronDown
                       className={`w-4 h-4 text-neutral-400 transition-transform duration-200 ${advancedOpen ? "rotate-180" : ""}`}
@@ -327,6 +353,68 @@ export default function HomePage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Card: Optional Creator Info & Note Subject */}
+                  <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-emerald-400" />
+                          Sender Attribution & Subject (Optional)
+                        </div>
+                        <div className="text-[11px] text-neutral-500 mt-0.5">
+                          Displayed to the recipient on the reveal page for context & verification
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-1">
+                      {/* Name and Email Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="relative">
+                          <User className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            type="text"
+                            maxLength={60}
+                            value={creatorName}
+                            onChange={(e) => setCreatorName(e.target.value)}
+                            placeholder="Your Name"
+                            className="w-full h-10 bg-neutral-900/60 border border-neutral-800 focus:border-emerald-500 rounded-xl pl-9 pr-3.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none transition"
+                          />
+                        </div>
+
+                        <div className="relative">
+                          <Mail className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <input
+                            type="email"
+                            maxLength={100}
+                            value={creatorEmail}
+                            onChange={(e) => setCreatorEmail(e.target.value)}
+                            readOnly
+                            onFocus={(e) => e.target.removeAttribute("readonly")}
+                            placeholder="Your Email"
+                            className="w-full h-10 bg-neutral-900/60 border border-neutral-800 focus:border-emerald-500 rounded-xl pl-9 pr-3.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none transition"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Subject / Title */}
+                      <div className="relative">
+                        <Tag className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          maxLength={120}
+                          value={creatorSubject}
+                          onChange={(e) => setCreatorSubject(e.target.value)}
+                          placeholder="Note Subject"
+                          className="w-full h-10 bg-neutral-900/60 border border-neutral-800 focus:border-emerald-500 rounded-xl pl-9 pr-3.5 text-xs text-neutral-200 placeholder-neutral-600 focus:outline-none transition"
+                        />
+                      </div>
+
+
+                    </div>
+                  </div>
+
 
                   {/* Card 2: Generated Links (Pointer References) */}
                   <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -528,11 +616,7 @@ export default function HomePage() {
                 </button>
               )}
               <button
-                onClick={() => {
-                  setText("");
-                  setGeneratedLinks([]);
-                  setGeneratedLinkIds([]);
-                }}
+                onClick={handleNewSecret}
                 className="w-full sm:flex-1 h-11 sm:h-12 px-5 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-xl text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
               >
                 <RefreshCw className="w-4 h-4" />

@@ -22,6 +22,7 @@ export async function GET(
       remainingStrikes: linkData.passcodeHash ? Math.max(0, 3 - (linkData.strikes || 0)) : null,
       burnOnRead: linkData.burnOnRead ?? true,
       ttlRemaining: ttlRemaining > 0 ? ttlRemaining : 0,
+      creator: linkData.creator || null,
     });
 
   } catch {
