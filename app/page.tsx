@@ -21,9 +21,10 @@ import {
   User,
   Mail,
   Tag,
+  QrCode
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
-
+import { ShareCardModal } from "@/components/ShareCardModal";
 
 
 const MAX_BYTES = 512 * 1024;
@@ -54,6 +55,7 @@ export default function HomePage() {
   const [creatorEmail, setCreatorEmail] = useState("");
   const [creatorSubject, setCreatorSubject] = useState("");
 
+  const [selectedCardUrl, setSelectedCardUrl] = useState<string | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
@@ -569,18 +571,33 @@ export default function HomePage() {
                   <div className="flex-1 font-mono text-emerald-400 truncate select-all pr-2">
                     {url}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(url, index)}
-                    className="shrink-0 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
-                  >
-                    {copiedIndex === index ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : (
-                      <Copy className="w-3.5 h-3.5" />
-                    )}
-                    {copiedIndex === index ? "Copied" : `Copy Link ${generatedLinks.length > 1 ? `#${index + 1}` : ""}`}
-                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Card & QR Trigger Button */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCardUrl(url)}
+                      className="px-2.5 py-1.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      title="View & Export Share Card"
+                    >
+                      <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Card & QR</span>
+                    </button>
+
+                    {/* Copy Link Button (Fixed width so 'Copy Link' -> 'Copied' never shifts layout) */}
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(url, index)}
+                      className="w-24 sm:w-28 shrink-0 h-7.5 px-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
+                    >
+                      {copiedIndex === index ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>{copiedIndex === index ? "Copied" : `Copy Link ${generatedLinks.length > 1 ? `#${index + 1}` : ""}`}</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -627,6 +644,20 @@ export default function HomePage() {
 
         )}
       </div>
+      <ShareCardModal
+        isOpen={Boolean(selectedCardUrl)}
+        onClose={() => setSelectedCardUrl(null)}
+        url={selectedCardUrl || ""}
+        creator={{
+          name: creatorName || undefined,
+          email: creatorEmail || undefined,
+          subject: creatorSubject || undefined,
+        }}
+        burnOnRead={burnOnRead}
+        ttl={ttl}
+        hasPasscode={passcode.length === 6}
+      />
+
     </div >
   );
 }
