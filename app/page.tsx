@@ -116,7 +116,6 @@ export default function HomePage() {
       const links = data.linkIds.map((id: string) => `${window.location.origin}/s/${id}#k=${keyString}`);
       setGeneratedLinkIds(data.linkIds);
       setGeneratedLinks(links);
-      setText("");
       setPasscode("");
     } catch {
       alert("Encryption or storage failed. Please check size bounds.");
@@ -151,7 +150,6 @@ export default function HomePage() {
       alert("Secret revoked and permanently destroyed.");
       setGeneratedLinkIds([]);
       setGeneratedLinks([]);
-      setText("");
       setPasscode("");
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Link revocation failed.");
@@ -531,6 +529,7 @@ export default function HomePage() {
               )}
               <button
                 onClick={() => {
+                  setText("");
                   setGeneratedLinks([]);
                   setGeneratedLinkIds([]);
                 }}

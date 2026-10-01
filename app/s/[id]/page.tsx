@@ -114,7 +114,9 @@ export default function RevealPage() {
       const plainText = await decryptSecret(data.ciphertext, data.iv, key);
       setSecretContent(plainText);
 
-      window.history.replaceState(null, "", window.location.pathname);
+      if (burnOnRead) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
     } catch (err: unknown) {
       setError(
         err instanceof Error
