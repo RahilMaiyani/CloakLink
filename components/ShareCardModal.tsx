@@ -177,7 +177,7 @@ export function ShareCardModal({
             return;
           }
         } catch {
-          // File share not supported or aborted; gracefully fall back to text/url
+          console.log("File share not supported or aborted; gracefully fall back to text/url");
         }
 
         await navigator.share({
@@ -235,17 +235,14 @@ export function ShareCardModal({
         </div>
         {/* ─── UNIFIED MODAL CARD CONTAINER ─── */}
         <div className="w-full bg-[#09090b] border border-neutral-800/90 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden font-mono flex flex-col select-none">
-          {/* ─── THE EXPORTABLE CARD CANVAS (CAPTURED BY toPng) ─── */}
           <div
             ref={cardRef}
             id="cloaker-secret-card"
             className="w-full bg-[#09090b] p-5 sm:p-6 relative overflow-hidden flex flex-col gap-4"
           >
-            {/* Subtle Ambient Emerald Lighting */}
             <div className="absolute -top-16 -right-16 w-44 h-44 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-16 -left-16 w-40 h-40 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Card Header: Brand & Security Badge */}
             <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
@@ -317,7 +314,6 @@ export function ShareCardModal({
 
             {/* Instructional & Policy Badges */}
             <div className="grid grid-cols-2 gap-2 text-[10px] font-semibold">
-              {/* Policy Badge */}
               <div className="flex items-center justify-center gap-1.5 py-1.5 px-2 bg-neutral-900/80 border border-neutral-800/80 rounded-lg text-neutral-300">
                 {burnOnRead ? (
                   <>
@@ -360,7 +356,6 @@ export function ShareCardModal({
 
           {/* ─── DOCKED BOTTOM ACTION BAR (INSIDE CONTAINER, EXCLUDED FROM cardRef) ─── */}
           <div className="px-4 py-3.5 sm:px-5 sm:py-4 bg-neutral-950/80 border-t border-neutral-800/80 flex items-center gap-2 font-mono">
-            {/* Download Card PNG */}
             <button
               onClick={handleDownloadCard}
               disabled={isDownloading}
@@ -394,7 +389,6 @@ export function ShareCardModal({
               <span>Share</span>
             </button>
 
-            {/* Copy Link (Fixed width: w-20 sm:w-22 shrink-0 so Copy -> Copied never resizes anything) */}
             <button
               onClick={handleCopy}
               className="w-20 sm:w-22 shrink-0 h-10 sm:h-11 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-300 hover:text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
