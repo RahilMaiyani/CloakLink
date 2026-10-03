@@ -2,13 +2,10 @@
 
 import { useState, useMemo, useRef } from "react";
 import { encryptSecret, hashPasscode, generateSalt } from "@/lib/crypto";
-import { Copy, Check, ShieldAlert, FileCode2, Clock, Sparkles, RefreshCw, Settings2, ChevronDown, Plus, Minus, Flame, Hourglass, Layers, KeyRound, User, Mail, Tag, QrCode, Paperclip, UploadCloud, FileUp, FileText, X } from "lucide-react";
+import { Copy, Check, ShieldAlert, FileCode2, Clock, Sparkles, RefreshCw, Settings2, ChevronDown, Plus, Minus, Flame, Hourglass, Layers, KeyRound, User, Mail, Tag, QrCode, Paperclip, UploadCloud, FileUp, FileText, X, Link2 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 import { ShareCardModal } from "@/components/ShareCardModal";
 import { toast } from "@/components/Toast";
-
-
-const MAX_BYTES = 512 * 1024;
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -30,7 +27,6 @@ function readFileAsBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
-
 
 export default function HomePage() {
   const [text, setText] = useState("");
@@ -93,6 +89,7 @@ export default function HomePage() {
       toast.error(`"${file.name}" exceeds the 1.0 MB limit (${formatBytes(file.size)}).`);
       return;
     }
+    setMode("file");
     setSelectedFile(file);
     toast.success(`Attached "${file.name}" (${formatBytes(file.size)})`);
   }
@@ -271,51 +268,78 @@ export default function HomePage() {
             onSubmit={handleCreateSecret}
             className="space-y-4 sm:space-y-5"
           >
-            <div 
+            {/* Always mounted hidden input for file attachments */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+              id="cloaker-file-upload"
+            />
+
+            {/* Mode Selector Segmented Tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="grid grid-cols-2 p-1 bg-neutral-950/90 border border-neutral-800/90 rounded-xl backdrop-blur-sm sm:inline-flex sm:w-auto shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => setMode("text")}
+                  className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${mode === "text"
+                    ? "bg-neutral-800 text-white border border-neutral-700/80 shadow-md shadow-black/40 text-emerald-400"
+                    : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50"
+                    }`}
+                >
+                  <FileCode2 className={`w-4 h-4 transition ${mode === "text" ? "text-emerald-400 scale-105" : "text-neutral-500"}`} />
+                  <span>Text / Code</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMode("file")}
+                  className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer ${mode === "file"
+                    ? "bg-neutral-800 text-white border border-neutral-700/80 shadow-md shadow-black/40 text-emerald-400"
+                    : "text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/50"
+                    }`}
+                >
+                  <Paperclip className={`w-4 h-4 transition ${mode === "file" ? "text-emerald-400 scale-105" : "text-neutral-500"}`} />
+                  <span>File</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-medium ${mode === "file" ? "bg-emerald-950/80 text-emerald-400 border border-emerald-800/60" : "bg-neutral-900 text-neutral-500"
+                    }`}>
+                    1 MB
+                  </span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] sm:text-xs text-neutral-400 self-end sm:self-auto pr-1">
+                <ShieldAlert className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>Client-Side AES-256-GCM Encrypted</span>
+              </div>
+            </div>
+
+            {/* Main Terminal Window */}
+            <div
               onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setIsDragging(false);
+                }
+              }}
               onDrop={handleFileDrop}
-              className="w-full border border-neutral-900 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition"
+              className="relative w-full border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition"
             >
-              {/* Header Bar with Segmented Mode Switcher */}
-              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2.5 text-xs text-neutral-400 select-none">
-                <div className="flex items-center gap-2">
+              {/* Header Bar */}
+              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400 select-none">
+                <div className="flex items-center gap-2.5">
                   <div className="flex gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                   </div>
-
-                  {/* Mode Switcher Tabs */}
-                  <div className="flex items-center bg-neutral-950/80 border border-neutral-800 rounded-lg p-0.5 ml-2">
-                    <button
-                      type="button"
-                      onClick={() => setMode("text")}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer ${
-                        mode === "text"
-                          ? "bg-neutral-800 text-neutral-100 shadow-sm"
-                          : "text-neutral-500 hover:text-neutral-300"
-                      }`}
-                    >
-                      <FileCode2 className={`w-3.5 h-3.5 ${mode === "text" ? "text-emerald-400" : "text-neutral-500"}`} />
-                      Text / Code
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMode("file")}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer ${
-                        mode === "file"
-                          ? "bg-neutral-800 text-neutral-100 shadow-sm"
-                          : "text-neutral-500 hover:text-neutral-300"
-                      }`}
-                    >
-                      <Paperclip className={`w-3.5 h-3.5 ${mode === "file" ? "text-emerald-400" : "text-neutral-500"}`} />
-                      File (1 MB)
-                    </button>
-                  </div>
+                  <span className="text-[11px] sm:text-xs font-mono text-neutral-300 font-medium">
+                    {mode === "text" ? "payload.txt" : selectedFile ? selectedFile.name : "attachment.bin"}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px]">
+                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono">
                   {mode === "text" ? (
                     <>
                       <span>{lineCount} {lineCount === 1 ? "line" : "lines"}</span>
@@ -332,47 +356,74 @@ export default function HomePage() {
                 </div>
               </div>
 
+              {/* Drag Over Overlay for either mode */}
+              {isDragging && (
+                <div className="absolute inset-0 z-30 bg-neutral-950/95 border-2 border-dashed border-emerald-500 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-150">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-950/60 border border-emerald-500/50 flex items-center justify-center mb-3 shadow-xl shadow-emerald-950/50">
+                    <UploadCloud className="w-7 h-7 text-emerald-400 animate-bounce" />
+                  </div>
+                  <p className="text-sm sm:text-base font-bold text-neutral-100">
+                    Drop file to stage & encrypt
+                  </p>
+                  <p className="text-xs text-emerald-400 mt-1">
+                    Supports any file up to 1.0 MB (.env, keys, configs, pdf, zip, etc.)
+                  </p>
+                </div>
+              )}
+
               {/* Body: Text Editor OR Cyber File Dropzone */}
               {mode === "text" ? (
-                <div className="relative flex h-[38dvh] min-h-56 sm:h-72 md:h-80 overflow-hidden font-mono text-xs sm:text-sm">
-                  <div
-                    ref={lineNumbersRef}
-                    className="w-9 sm:w-11 py-3 sm:py-3.5 bg-neutral-950/80 border-r border-neutral-800 text-neutral-600 select-none overflow-hidden text-right pr-2 sm:pr-3 leading-6 font-medium shrink-0"
-                  >
-                    {lineNumbers.map((num) => (
-                      <div key={num}>{num}</div>
-                    ))}
+                <>
+                  <div className="relative flex h-[38dvh] min-h-56 sm:h-72 md:h-80 overflow-hidden font-mono text-xs sm:text-sm">
+                    <div
+                      ref={lineNumbersRef}
+                      className="w-9 sm:w-11 py-3 sm:py-3.5 bg-neutral-950/80 border-r border-neutral-800 text-neutral-600 select-none overflow-hidden text-right pr-2 sm:pr-3 leading-6 font-medium shrink-0"
+                    >
+                      {lineNumbers.map((num) => (
+                        <div key={num}>{num}</div>
+                      ))}
+                    </div>
+
+                    <textarea
+                      ref={textareaRef}
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      onScroll={handleScroll}
+                      placeholder="# Paste sensitive configs, credentials, or keys..."
+                      required={mode === "text"}
+                      spellCheck={false}
+                      className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 scheme-dark"
+                    />
                   </div>
 
-                  <textarea
-                    ref={textareaRef}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onScroll={handleScroll}
-                    placeholder="# Paste sensitive configs, credentials, or keys..."
-                    required={mode === "text"}
-                    spellCheck={false}
-                    className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 scheme-dark"
-                  />
-                </div>
+                  {/* Text Mode Footer: Drag file option & Attach button */}
+                  <div className="px-3.5 py-2.5 bg-neutral-950/90 border-t border-neutral-800/80 flex items-center justify-between text-xs select-none">
+                    <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                      <UploadCloud className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                      <span>Or drag & drop a file here</span>
+                      <span className="hidden sm:inline text-neutral-700">•</span>
+                      <span className="hidden sm:inline text-neutral-500">Max 1.0 MB</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-emerald-300 border border-neutral-800 hover:border-neutral-700 text-[11px] font-medium transition cursor-pointer active:scale-95"
+                    >
+                      <Paperclip className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Attach file</span>
+                    </button>
+                  </div>
+                </>
               ) : (
                 <div className="relative flex flex-col items-center justify-center h-[38dvh] min-h-56 sm:h-72 md:h-80 p-4 sm:p-6 bg-neutral-950/60 font-mono">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="cloaker-file-upload"
-                  />
-
                   {!selectedFile ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-200 ${
-                        isDragging
-                          ? "border-emerald-500 bg-emerald-950/30 scale-[0.99]"
-                          : "border-neutral-800 hover:border-neutral-700 bg-neutral-900/20 hover:bg-neutral-900/40"
-                      }`}
+                      className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-200 ${isDragging
+                        ? "border-emerald-500 bg-emerald-950/30 scale-[0.99]"
+                        : "border-neutral-800 hover:border-neutral-700 bg-neutral-900/20 hover:bg-neutral-900/40"
+                        }`}
                     >
                       <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-3 shadow-inner">
                         <UploadCloud className="w-6 h-6 text-emerald-400" />
@@ -434,9 +485,8 @@ export default function HomePage() {
               {/* Progress Bar */}
               <div className="h-1 w-full bg-neutral-900 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-200 ${
-                    isOverLimit ? "bg-red-500" : usagePercent > 80 ? "bg-amber-500" : "bg-emerald-500"
-                  }`}
+                  className={`h-full transition-all duration-200 ${isOverLimit ? "bg-red-500" : usagePercent > 80 ? "bg-amber-500" : "bg-emerald-500"
+                    }`}
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
@@ -753,21 +803,28 @@ export default function HomePage() {
               {generatedLinks.map((url, index) => (
                 <div
                   key={url}
-                  className="p-3 bg-neutral-950/80 border border-neutral-800 rounded-xl flex items-center justify-between gap-3 text-xs"
+                  className="p-3 sm:p-4 bg-neutral-950/90 border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
                 >
-                  <div className="flex-1 font-mono text-emerald-400 truncate select-all pr-2">
-                    {url}
+                  {/* Dedicated full line for Link on mobile */}
+                  <div className="w-full sm:flex-1 min-w-0">
+                    <div className="flex items-center gap-2 bg-neutral-900/60 sm:bg-transparent border border-neutral-800/80 sm:border-0 rounded-lg px-2.5 py-2 sm:p-0 text-emerald-400 font-mono text-xs select-all">
+                      <Link2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span className="truncate block" title={url}>
+                        {url}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  {/* Buttons in line below on mobile, aligned inline on desktop */}
+                  <div className="flex items-center justify-end gap-2 w-full sm:w-auto shrink-0 pt-2 sm:pt-0 border-t border-neutral-900/80 sm:border-0">
                     {/* Card & QR Trigger Button */}
                     <button
                       type="button"
                       onClick={() => setSelectedCardUrl(url)}
-                      className="px-2.5 py-1.5 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer active:scale-95"
+                      className="flex-1 sm:flex-initial h-8 px-3 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-800/60 text-emerald-300 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
                       title="View & Export Share Card"
                     >
-                      <QrCode className="w-3.5 h-3.5 text-emerald-400" />
+                      <QrCode className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                       <span>Card & QR</span>
                     </button>
 
@@ -775,7 +832,7 @@ export default function HomePage() {
                     <button
                       type="button"
                       onClick={() => handleCopy(url, index)}
-                      className="w-24 sm:w-28 shrink-0 h-7.5 px-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-[11px] font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
+                      className="flex-1 sm:flex-initial sm:w-28 h-8 px-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer active:scale-95"
                     >
                       {copiedIndex === index ? (
                         <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
