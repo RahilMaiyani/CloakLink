@@ -56,9 +56,13 @@ export async function POST(request: Request) {
     const masterId = crypto.randomBytes(12).toString("base64url");
     const linkIds = Array.from({ length: linkCount }, () => crypto.randomBytes(12).toString('base64url'));
 
+    const revocationToken = crypto.randomBytes(24).toString("base64url");
+    const revocationTokenHash = crypto.createHash('sha256').update(revocationToken).digest('hex');
+
     const pipeline = redis.pipeline();
 
     pipeline.set(`secret:payload:${masterId}`, JSON.stringify({ ciphertext, iv }), { ex: ttlSeconds });
+    pipeline.set(`secret:revoke:${masterId}`, revocationTokenHash, { ex: ttlSeconds });
 
     for (const linkId of linkIds) {
       pipeline.set(`secret:link:${linkId}`, JSON.stringify({
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
 
     await pipeline.exec();
 
-    return NextResponse.json({ linkIds, ttl: ttlSeconds }, { status: 201 });
+    return NextResponse.json({ linkIds, revocationToken, ttl: ttlSeconds }, { status: 201 });
 
   } catch {
     return NextResponse.json(

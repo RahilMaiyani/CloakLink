@@ -41,6 +41,7 @@ export async function POST(
           if (remainingRefs === 0) {
             await redis.del(`secret:payload:${masterId}`);
             await redis.del(`secret:refs:${masterId}`);
+            await redis.del(`secret:revoke:${masterId}`);
           }
           return NextResponse.json(
             { error: "Maximum attempts reached. Secret destroyed." },
@@ -78,6 +79,7 @@ export async function POST(
       if (remaining === 0) {
         await redis.del(`secret:payload:${masterId}`);
         await redis.del(`secret:refs:${masterId}`);
+        await redis.del(`secret:revoke:${masterId}`);
       }
     }
 

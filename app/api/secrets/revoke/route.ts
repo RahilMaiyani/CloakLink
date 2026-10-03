@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
+import crypto from 'crypto';
+import { stat } from "fs";
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
         const linkIds: string[] | undefined = body?.linkIds;
+        const revocationToken: string | undefined = body?.revocationToken;
 
-        if (!Array.isArray(linkIds) || linkIds.length === 0) {
+        if (!Array.isArray(linkIds) || linkIds.length === 0 || typeof revocationToken !== "string" || !revocationToken.trim()) {
             return NextResponse.json(
-                { error: "Valid linkIds array required." },
+                { error: "Valid linkIds array and revocationToken are required." },
                 { status: 400 },
             );
         }
@@ -30,6 +33,20 @@ export async function POST(req: Request) {
             );
         }
 
+        const storedTokenHash = await redis.get<string>(`secret:revoke:${masterId}`);
+        if (!storedTokenHash) {
+            return NextResponse.json({ error: "Revocation record not found or secret already destroyed." }, { status: 404 });
+        }
+
+        const providedTokenHash = crypto.createHash("sha256").update(revocationToken.trim()).digest('hex');
+
+        const storedBuf = Buffer.from(storedTokenHash, 'utf-8');
+        const providedBuf = Buffer.from(providedTokenHash, 'utf-8');
+
+        if (storedBuf.length !== providedBuf.length || !crypto.timingSafeEqual(storedBuf, providedBuf)) {
+            return NextResponse.json({ error: "Unauthorized: Invalid revocation token." }, { status: 403 });
+        }
+
         const allRefs = await redis.smembers(`secret:refs:${masterId}`);
         const pipeline = redis.pipeline();
 
@@ -40,6 +57,7 @@ export async function POST(req: Request) {
 
         pipeline.del(`secret:payload:${masterId}`);
         pipeline.del(`secret:refs:${masterId}`);
+        pipeline.del(`secret:revoke:${masterId}`);
 
         await pipeline.exec();
 

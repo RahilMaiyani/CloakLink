@@ -50,6 +50,8 @@ export default function HomePage() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
 
+  const [revocationToken, setRevocationToken] = useState<string | null>(null);
+
   const [passcode, setPasscode] = useState("");
 
   const [creatorName, setCreatorName] = useState("");
@@ -136,6 +138,7 @@ export default function HomePage() {
       const links = data.linkIds.map((id: string) => `${window.location.origin}/s/${id}#k=${keyString}`);
       setGeneratedLinkIds(data.linkIds);
       setGeneratedLinks(links);
+      setRevocationToken(data.revocationToken || null);
       setPasscode("");
       toast.success(
         data.linkIds.length > 1
@@ -152,7 +155,7 @@ export default function HomePage() {
   }
 
   async function handleRevokeLinks() {
-    if (!generatedLinkIds.length) {
+    if (!generatedLinkIds.length || !revocationToken) {
       toast.warning("Generate links first before attempting revocation.");
       return;
     }
@@ -163,6 +166,7 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           linkIds: generatedLinkIds,
+          revocationToken,
         }),
       });
 
@@ -177,6 +181,7 @@ export default function HomePage() {
       toast.success("Secret revoked and permanently destroyed from server.");
       setGeneratedLinkIds([]);
       setGeneratedLinks([]);
+      setRevocationToken(null);
       setPasscode("");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Link revocation failed.");
@@ -191,6 +196,7 @@ export default function HomePage() {
     setGeneratedLinkIds([]);
     setCreatorName("");
     setCreatorEmail("");
+    setRevocationToken(null);
     setCreatorSubject("");
   }
 
