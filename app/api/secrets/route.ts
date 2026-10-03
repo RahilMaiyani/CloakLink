@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 import crypto from "crypto";
 
-const MAX_CIPHERTEXT_LENGTH = 720_000;
+const MAX_CIPHERTEXT_LENGTH = 2_000_000;
 const MAX_LINK_COUNT = 3;
 
 export async function POST(request: Request) {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
 
     if (ciphertext.length > MAX_CIPHERTEXT_LENGTH) {
       return NextResponse.json(
-        { error: "Payload exceeds the 512 KB limit." },
+        { error: "Payload exceeds size limit (Max 1 MB file or 512 KB text)." },
         { status: 413 },
       );
     }

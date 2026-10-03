@@ -2,27 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { encryptSecret, hashPasscode, generateSalt } from "@/lib/crypto";
-import {
-  Copy,
-  Check,
-  ShieldAlert,
-  FileCode2,
-  Clock,
-  Sparkles,
-  RefreshCw,
-  Settings2,
-  ChevronDown,
-  Plus,
-  Minus,
-  Flame,
-  Hourglass,
-  Layers,
-  KeyRound,
-  User,
-  Mail,
-  Tag,
-  QrCode
-} from "lucide-react";
+import { Copy, Check, ShieldAlert, FileCode2, Clock, Sparkles, RefreshCw, Settings2, ChevronDown, Plus, Minus, Flame, Hourglass, Layers, KeyRound, User, Mail, Tag, QrCode, Paperclip, UploadCloud, FileUp, FileText, X } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 import { ShareCardModal } from "@/components/ShareCardModal";
 import { toast } from "@/components/Toast";
@@ -35,6 +15,23 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+const MAX_TEXT_BYTES = 512 * 1024;
+const MAX_FILE_BYTES = 1024 * 1024;
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.includes(",") ? result.split(",")[1] : result;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+
 export default function HomePage() {
   const [text, setText] = useState("");
   const [ttl, setTtl] = useState(86400);
@@ -44,6 +41,12 @@ export default function HomePage() {
   const [isEncrypting, setIsEncrypting] = useState(false);
   const [isRevoking, setIsRevoking] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const [mode, setMode] = useState<"text" | "file">("text");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const [generatedLinkIds, setGeneratedLinkIds] = useState<string[]>([]);
   const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
@@ -63,9 +66,10 @@ export default function HomePage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineNumbersRef = useRef<HTMLDivElement>(null);
 
-  const byteSize = useMemo(() => new Blob([text]).size, [text]);
-  const isOverLimit = byteSize > MAX_BYTES;
-  const usagePercent = Math.min((byteSize / MAX_BYTES) * 100, 100);
+  const byteSize = useMemo(() => (mode === "text" ? new Blob([text]).size : selectedFile?.size || 0), [text, mode, selectedFile]);
+  const isOverLimit = mode === "text" ? byteSize > MAX_TEXT_BYTES : byteSize > MAX_FILE_BYTES;
+  const usagePercent = Math.min((byteSize / (mode === "text" ? MAX_TEXT_BYTES : MAX_FILE_BYTES)) * 100, 100);
+
 
   const lineCount = useMemo(() => {
     if (!text) return 1;
@@ -82,13 +86,55 @@ export default function HomePage() {
     }
   };
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error(`"${file.name}" exceeds the 1.0 MB limit (${formatBytes(file.size)}).`);
+      return;
+    }
+    setSelectedFile(file);
+    toast.success(`Attached "${file.name}" (${formatBytes(file.size)})`);
+  }
+
+  function handleFileDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_FILE_BYTES) {
+      toast.error(`"${file.name}" exceeds the 1.0 MB limit (${formatBytes(file.size)}).`);
+      return;
+    }
+    setMode("file");
+    setSelectedFile(file);
+    toast.success(`Attached "${file.name}" (${formatBytes(file.size)})`);
+  }
+
   async function handleCreateSecret(e: React.SubmitEvent) {
     e.preventDefault();
-    if (!text.trim() || isOverLimit) return;
+    if (mode === "text" && (!text.trim() || isOverLimit)) return;
+    if (mode === "file" && (!selectedFile || isOverLimit)) return;
 
     setIsEncrypting(true);
     try {
-      const { ciphertext, iv, keyString } = await encryptSecret(text);
+      let payloadToEncrypt: string;
+
+      if (mode === "file" && selectedFile) {
+        const base64Data = await readFileAsBase64(selectedFile);
+        payloadToEncrypt = JSON.stringify({
+          type: "file",
+          name: selectedFile.name,
+          size: selectedFile.size,
+          mimeType: selectedFile.type || "application/octet-stream",
+          data: base64Data,
+        });
+      } else {
+        payloadToEncrypt = text;
+      }
+
+      const { ciphertext, iv, keyString } = await encryptSecret(payloadToEncrypt);
+
 
       if (passcode && passcode.length !== 6) {
         toast.error("Passcode must be exactly 6 digits (or leave blank).");
@@ -192,6 +238,8 @@ export default function HomePage() {
 
   function handleNewSecret() {
     setText("");
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
     setGeneratedLinks([]);
     setGeneratedLinkIds([]);
     setCreatorName("");
@@ -199,6 +247,7 @@ export default function HomePage() {
     setRevocationToken(null);
     setCreatorSubject("");
   }
+
 
   function handleCopy(url: string, index: number) {
     navigator.clipboard.writeText(url);
@@ -222,66 +271,172 @@ export default function HomePage() {
             onSubmit={handleCreateSecret}
             className="space-y-4 sm:space-y-5"
           >
-            <div className="w-full border border-neutral-900 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition">
-              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex items-center justify-between text-xs text-neutral-400 select-none">
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleFileDrop}
+              className="w-full border border-neutral-900 rounded-xl overflow-hidden bg-neutral-950/90 shadow-inner focus-within:border-neutral-700 transition"
+            >
+              {/* Header Bar with Segmented Mode Switcher */}
+              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2.5 text-xs text-neutral-400 select-none">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                     <span className="w-2.5 h-2.5 rounded-full bg-neutral-700/80" />
                   </div>
-                  <span className="ml-1 sm:ml-2 font-medium text-neutral-300 flex items-center gap-1.5 text-[11px] sm:text-xs">
-                    <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
-                    payload.env
-                  </span>
+
+                  {/* Mode Switcher Tabs */}
+                  <div className="flex items-center bg-neutral-950/80 border border-neutral-800 rounded-lg p-0.5 ml-2">
+                    <button
+                      type="button"
+                      onClick={() => setMode("text")}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer ${
+                        mode === "text"
+                          ? "bg-neutral-800 text-neutral-100 shadow-sm"
+                          : "text-neutral-500 hover:text-neutral-300"
+                      }`}
+                    >
+                      <FileCode2 className={`w-3.5 h-3.5 ${mode === "text" ? "text-emerald-400" : "text-neutral-500"}`} />
+                      Text / Code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMode("file")}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer ${
+                        mode === "file"
+                          ? "bg-neutral-800 text-neutral-100 shadow-sm"
+                          : "text-neutral-500 hover:text-neutral-300"
+                      }`}
+                    >
+                      <Paperclip className={`w-3.5 h-3.5 ${mode === "file" ? "text-emerald-400" : "text-neutral-500"}`} />
+                      File (1 MB)
+                    </button>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px]">
-                  <span>
-                    {lineCount} {lineCount === 1 ? "line" : "lines"}
-                  </span>
-                  <span className="text-neutral-700">|</span>
-                  <span
-                    className={
-                      isOverLimit
-                        ? "text-red-400 font-bold"
-                        : "text-neutral-400"
-                    }
+                  {mode === "text" ? (
+                    <>
+                      <span>{lineCount} {lineCount === 1 ? "line" : "lines"}</span>
+                      <span className="text-neutral-700">|</span>
+                      <span className={isOverLimit ? "text-red-400 font-bold" : "text-neutral-400"}>
+                        {formatBytes(byteSize)} / 512 KB
+                      </span>
+                    </>
+                  ) : (
+                    <span className={isOverLimit ? "text-red-400 font-bold" : "text-neutral-400"}>
+                      {selectedFile ? `${formatBytes(selectedFile.size)} / 1.0 MB` : "Max 1.0 MB"}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Body: Text Editor OR Cyber File Dropzone */}
+              {mode === "text" ? (
+                <div className="relative flex h-[38dvh] min-h-56 sm:h-72 md:h-80 overflow-hidden font-mono text-xs sm:text-sm">
+                  <div
+                    ref={lineNumbersRef}
+                    className="w-9 sm:w-11 py-3 sm:py-3.5 bg-neutral-950/80 border-r border-neutral-800 text-neutral-600 select-none overflow-hidden text-right pr-2 sm:pr-3 leading-6 font-medium shrink-0"
                   >
-                    {formatBytes(byteSize)} / 512 KB
-                  </span>
+                    {lineNumbers.map((num) => (
+                      <div key={num}>{num}</div>
+                    ))}
+                  </div>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onScroll={handleScroll}
+                    placeholder="# Paste sensitive configs, credentials, or keys..."
+                    required={mode === "text"}
+                    spellCheck={false}
+                    className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 scheme-dark"
+                  />
                 </div>
-              </div>
+              ) : (
+                <div className="relative flex flex-col items-center justify-center h-[38dvh] min-h-56 sm:h-72 md:h-80 p-4 sm:p-6 bg-neutral-950/60 font-mono">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="cloaker-file-upload"
+                  />
 
-              <div className="relative flex h-[38dvh] min-h-56 sm:h-72 md:h-80 overflow-hidden font-mono text-xs sm:text-sm">
-                <div
-                  ref={lineNumbersRef}
-                  className="w-9 sm:w-11 py-3 sm:py-3.5 bg-neutral-950/80 border-r border-neutral-800 text-neutral-600 select-none overflow-hidden text-right pr-2 sm:pr-3 leading-6 font-medium shrink-0"
-                >
-                  {lineNumbers.map((num) => (
-                    <div key={num}>{num}</div>
-                  ))}
+                  {!selectedFile ? (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`w-full h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition-all duration-200 ${
+                        isDragging
+                          ? "border-emerald-500 bg-emerald-950/30 scale-[0.99]"
+                          : "border-neutral-800 hover:border-neutral-700 bg-neutral-900/20 hover:bg-neutral-900/40"
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center mb-3 shadow-inner">
+                        <UploadCloud className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <p className="text-xs sm:text-sm font-semibold text-neutral-200">
+                        Drop file here, or <span className="text-emerald-400 hover:underline">browse</span>
+                      </p>
+                      <p className="text-[11px] text-neutral-500 mt-1 max-w-sm">
+                        Supports any file up to 1.0 MB (.env, keys, configs, pdf, images, archives)
+                      </p>
+                      <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 bg-neutral-900/80 border border-neutral-800 rounded-lg text-[10px] text-neutral-400">
+                        <ShieldAlert className="w-3 h-3 text-emerald-400" />
+                        Encrypted with AES-256-GCM in-browser before upload
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-md p-4 sm:p-5 bg-neutral-900/90 border border-neutral-800 rounded-xl space-y-3 shadow-2xl">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-950/50 border border-emerald-800/60 flex items-center justify-center shrink-0">
+                            <FileText className="w-5 h-5 text-emerald-400" />
+                          </div>
+                          <div className="overflow-hidden">
+                            <p className="text-xs sm:text-sm font-semibold text-neutral-100 truncate" title={selectedFile.name}>
+                              {selectedFile.name}
+                            </p>
+                            <p className="text-[11px] text-neutral-400 mt-0.5">
+                              {formatBytes(selectedFile.size)} • {selectedFile.type || "binary/octet-stream"}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setSelectedFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                          className="w-7 h-7 rounded-lg bg-neutral-800 hover:bg-red-950/60 hover:text-red-400 text-neutral-400 flex items-center justify-center transition cursor-pointer"
+                          title="Remove file"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="pt-2.5 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400">
+                        <span className="flex items-center gap-1 text-emerald-400">
+                          <Check className="w-3.5 h-3.5" /> Ready for encryption
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="text-neutral-400 hover:text-neutral-200 underline cursor-pointer"
+                        >
+                          Change file
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <textarea
-                  ref={textareaRef}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onScroll={handleScroll}
-                  placeholder="# Paste sensitive configs, credentials, or keys..."
-                  required
-                  spellCheck={false}
-                  className="flex-1 p-3 sm:p-3.5 bg-transparent text-neutral-200 placeholder-neutral-600 focus:outline-none resize-none leading-6 overflow-y-auto whitespace-pre font-mono selection:bg-emerald-950 selection:text-emerald-300 scheme-dark"
-                />
-              </div>
-
+              {/* Progress Bar */}
               <div className="h-1 w-full bg-neutral-900 overflow-hidden">
                 <div
-                  className={`h-full transition-all duration-200 ${isOverLimit
-                    ? "bg-red-500"
-                    : usagePercent > 80
-                      ? "bg-amber-500"
-                      : "bg-emerald-500"
-                    }`}
+                  className={`h-full transition-all duration-200 ${
+                    isOverLimit ? "bg-red-500" : usagePercent > 80 ? "bg-amber-500" : "bg-emerald-500"
+                  }`}
                   style={{ width: `${usagePercent}%` }}
                 />
               </div>
@@ -507,13 +662,21 @@ export default function HomePage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isEncrypting || !text.trim() || isOverLimit}
+                disabled={
+                  isEncrypting ||
+                  (mode === "text" ? !text.trim() || isOverLimit : !selectedFile || isOverLimit)
+                }
                 className="w-full mt-4 h-11 sm:h-12 px-6 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-neutral-950 font-bold rounded-xl text-xs sm:text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 cursor-pointer active:scale-[0.99]"
               >
                 {isEncrypting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin" />
                     Encrypting In-Memory...
+                  </>
+                ) : mode === "file" && selectedFile ? (
+                  <>
+                    <FileUp className="w-4 h-4" />
+                    Encrypt & Send &quot;{selectedFile.name}&quot;
                   </>
                 ) : (
                   <>
@@ -526,7 +689,15 @@ export default function HomePage() {
               </button>
 
               {/* Live Settings Status Line */}
-              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 select-none mt-2">
+              <div className="flex items-center justify-center gap-2 text-[11px] text-neutral-500 select-none mt-2 flex-wrap">
+                {mode === "file" && selectedFile && (
+                  <>
+                    <span className="text-emerald-400/90 font-medium truncate max-w-[150px]">
+                      {selectedFile.name} ({formatBytes(selectedFile.size)})
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
                 <span>
                   {ttl === 300
                     ? "5 Minutes"

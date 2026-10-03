@@ -13,7 +13,10 @@ import {
   Unlock,
   KeyRound,
   AlertTriangle,
-  User, Mail, Tag
+  User, Mail, Tag,
+  FileText,
+  FileCode2,
+  ChevronDown
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 import { toast } from "@/components/Toast";
@@ -25,12 +28,22 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+interface DecryptedFile {
+  name: string;
+  size: number;
+  mimeType: string;
+  data: string; // base64
+}
+
 export default function RevealPage() {
   const { id } = useParams<{ id: string }>();
   const [metaLoading, setMetaLoading] = useState(true);
   const [exists, setExists] = useState(false);
   const [isBurning, setIsBurning] = useState(false);
   const [secretContent, setSecretContent] = useState<string | null>(null);
+  const [decryptedFile, setDecryptedFile] = useState<DecryptedFile | null>(null);
+  const [filePreviewText, setFilePreviewText] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [burnOnRead, setBurnOnRead] = useState(true);
@@ -118,7 +131,35 @@ export default function RevealPage() {
       }
 
       const plainText = await decryptSecret(data.ciphertext, data.iv, key);
-      setSecretContent(plainText);
+
+      // Check if decrypted payload is an attached file envelope
+      let parsedFile: DecryptedFile | null = null;
+      try {
+        const parsed = JSON.parse(plainText);
+        if (parsed && parsed.type === "file" && parsed.data) {
+          parsedFile = parsed;
+        }
+      } catch {
+        // Plain text legacy payload
+      }
+
+      if (parsedFile) {
+        setDecryptedFile(parsedFile);
+        const isTextLike =
+          parsedFile.mimeType.startsWith("text/") ||
+          parsedFile.mimeType.includes("json") ||
+          /\.(env|txt|json|yaml|yml|md|js|ts|jsx|tsx|py|sh|sql|pem|key|crt|csv)$/i.test(parsedFile.name);
+
+        if (isTextLike) {
+          try {
+            setFilePreviewText(atob(parsedFile.data));
+          } catch {
+            // Binary fallback
+          }
+        }
+      } else {
+        setSecretContent(plainText);
+      }
 
       if (burnOnRead) {
         window.history.replaceState(null, "", window.location.pathname);
@@ -131,6 +172,27 @@ export default function RevealPage() {
       );
     } finally {
       setIsBurning(false);
+    }
+  }
+
+  function handleDownloadFile() {
+    if (!decryptedFile) return;
+    try {
+      const binaryString = atob(decryptedFile.data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const blob = new Blob([bytes], { type: decryptedFile.mimeType || "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = decryptedFile.name;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${decryptedFile.name}`);
+    } catch {
+      toast.error("Failed to decode and download file.");
     }
   }
 
@@ -191,7 +253,7 @@ export default function RevealPage() {
               </Link>
             </div>
           </div>
-        ) : !secretContent ? (
+        ) : (!secretContent && !decryptedFile) ? (
           <div className="flex-1 flex flex-col justify-center space-y-6 py-4">
             {/* Optional Sender Attribution Card */}
             {creator && (creator.subject || creator.name || creator.email) && (
@@ -322,6 +384,84 @@ export default function RevealPage() {
               </>
             )}
           </div>
+        ) : decryptedFile ? (
+          /* ─── DECRYPTED FILE VIEW ─── */
+          <div className="space-y-5">
+            <div className="w-full border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950/90 shadow-2xl">
+              <div className="bg-neutral-900/90 px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-neutral-800 flex items-center justify-between text-xs select-none">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-400 font-semibold tracking-wide text-[11px] sm:text-xs">
+                    DECRYPTED ATTACHMENT ({formatBytes(decryptedFile.size)})
+                  </span>
+                </div>
+              </div>
+
+              {/* File Info Banner */}
+              <div className="p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-neutral-950/60">
+                <div className="flex items-center gap-3.5 overflow-hidden w-full sm:w-auto">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-950/50 border border-emerald-800/60 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/20">
+                    <FileText className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="overflow-hidden">
+                    <h3 className="text-sm sm:text-base font-bold text-neutral-100 truncate" title={decryptedFile.name}>
+                      {decryptedFile.name}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      {formatBytes(decryptedFile.size)} • {decryptedFile.mimeType || "application/octet-stream"}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadFile}
+                  className="w-full sm:w-auto px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-bold rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-950/40 cursor-pointer active:scale-95 shrink-0"
+                >
+                  <Download className="w-4 h-4" />
+                  Download File
+                </button>
+              </div>
+
+              {/* Optional Inline Preview for Configs/Code */}
+              {filePreviewText !== null && (
+                <div className="border-t border-neutral-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview((p) => !p)}
+                    className="w-full px-4 py-2.5 bg-neutral-900/60 hover:bg-neutral-900 text-neutral-300 text-xs font-semibold flex items-center justify-between transition cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <FileCode2 className="w-3.5 h-3.5 text-emerald-400" />
+                      Preview File Contents
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${showPreview ? "rotate-180" : ""}`} />
+                  </button>
+
+                  {showPreview && (
+                    <div className="max-h-72 overflow-auto font-mono text-xs p-4 bg-neutral-950 text-neutral-200 whitespace-pre leading-5 border-t border-neutral-800/60">
+                      {filePreviewText}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center justify-between text-[11px] sm:text-xs text-neutral-500 pt-1 gap-2.5 text-center sm:text-left">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-neutral-600" />
+                {burnOnRead ? "Ciphertext destroyed on server" : "Secret link valid until expiry"}
+              </span>
+              <Link
+                href="/"
+                className="text-white bg-emerald-700/60 rounded-full p-1.5 px-2 hover:text-emerald-300 transition"
+              >
+                <span className="flex items-center gap-1 font-medium">
+                  Send your own secret <ArrowRight className="w-3 h-3" />
+                </span>
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="space-y-5">
             {/* Decrypted Payload Terminal */}
@@ -331,7 +471,7 @@ export default function RevealPage() {
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-emerald-400 font-semibold tracking-wide text-[11px] sm:text-xs">
                     DECRYPTED PAYLOAD (
-                    {formatBytes(new Blob([secretContent]).size)})
+                    {formatBytes(new Blob([secretContent || ""]).size)})
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -359,7 +499,7 @@ export default function RevealPage() {
               <div className="h-[46dvh] min-h-85 sm:h-auto sm:min-h-65 sm:max-h-115 overflow-auto font-mono text-xs sm:text-sm leading-6 scheme-dark max-w-full">
                 <div className="flex min-w-full w-max min-h-full sm:min-h-65">
                   <div className="sticky left-0 z-10 w-9 sm:w-12 py-3 sm:py-3.5 bg-neutral-950 border-r border-neutral-800 text-neutral-600 select-none text-right pr-2 sm:pr-3.5 font-medium shrink-0">
-                    {secretContent.split("\n").map((_, i) => (
+                    {(secretContent || "").split("\n").map((_, i) => (
                       <div key={i}>{i + 1}</div>
                     ))}
                   </div>
