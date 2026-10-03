@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
 import { ShareCardModal } from "@/components/ShareCardModal";
+import { toast } from "@/components/Toast";
 
 
 const MAX_BYTES = 512 * 1024;
@@ -88,7 +89,7 @@ export default function HomePage() {
       const { ciphertext, iv, keyString } = await encryptSecret(text);
 
       if (passcode && passcode.length !== 6) {
-        alert("Passcode must be exactly 6 digits (or leave blank).");
+        toast.error("Passcode must be exactly 6 digits (or leave blank).");
         return;
       }
 
@@ -126,7 +127,7 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 429) {
-          alert(data.error);
+          toast.warning(data.error || "Rate limit reached. Please try again later.");
           return;
         }
         throw new Error(data.error || "Storage failed");
@@ -136,8 +137,15 @@ export default function HomePage() {
       setGeneratedLinkIds(data.linkIds);
       setGeneratedLinks(links);
       setPasscode("");
-    } catch {
-      alert("Encryption or storage failed. Please check size bounds.");
+      toast.success(
+        data.linkIds.length > 1
+          ? `${data.linkIds.length} zero-knowledge links generated!`
+          : "Zero-knowledge secret link generated!"
+      );
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : "Encryption or storage failed. Please check size bounds."
+      );
     } finally {
       setIsEncrypting(false);
     }
@@ -145,7 +153,7 @@ export default function HomePage() {
 
   async function handleRevokeLinks() {
     if (!generatedLinkIds.length) {
-      alert("Generate links first");
+      toast.warning("Generate links first before attempting revocation.");
       return;
     }
     setIsRevoking(true);
@@ -161,17 +169,17 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 429) {
-          alert(data.error);
+          toast.warning(data.error || "Too many revocation requests. Please wait.");
           return;
         }
         throw new Error(data.error || "Revocation failed");
       }
-      alert("Secret revoked and permanently destroyed.");
+      toast.success("Secret revoked and permanently destroyed from server.");
       setGeneratedLinkIds([]);
       setGeneratedLinks([]);
       setPasscode("");
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Link revocation failed.");
+      toast.error(err instanceof Error ? err.message : "Link revocation failed.");
     } finally {
       setIsRevoking(false);
     }
@@ -189,12 +197,14 @@ export default function HomePage() {
   function handleCopy(url: string, index: number) {
     navigator.clipboard.writeText(url);
     setCopiedIndex(index);
+    toast.success("Secret link copied to clipboard");
     setTimeout(() => setCopiedIndex(null), 2000);
   }
 
   function handleCopyAll() {
     navigator.clipboard.writeText(generatedLinks.join("\n"));
     setCopiedAll(true);
+    toast.success("All secret links copied to clipboard");
     setTimeout(() => setCopiedAll(false), 2000);
   }
 
@@ -310,7 +320,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Advanced Settings Accordion Body (Spacious & Decongested) */}
+              {/* Advanced Settings Accordion Body */}
               <div
                 className={`transition-all duration-300 ease-in-out overflow-hidden ${advancedOpen
                   ? "max-h-[900px] opacity-100 mt-4"
@@ -356,7 +366,7 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Card: Optional Creator Info & Note Subject */}
+                  {/* Card: Optional Creator Info & Subject */}
                   <div className="p-4 sm:p-5 bg-neutral-950/80 border border-neutral-800 rounded-xl space-y-3.5">
                     <div className="flex items-center justify-between">
                       <div>
@@ -426,7 +436,7 @@ export default function HomePage() {
                         Multi-Link Generation
                       </div>
                       <div className="text-[11px] text-neutral-500 mt-0.5">
-                        Create 1–3 independent links sharing 1 encrypted master payload
+                        Create 1-3 independent links sharing 1 encrypted master payload
                       </div>
                     </div>
 
@@ -584,7 +594,7 @@ export default function HomePage() {
                       <span>Card & QR</span>
                     </button>
 
-                    {/* Copy Link Button (Fixed width so 'Copy Link' -> 'Copied' never shifts layout) */}
+                    {/* Copy Link Button */}
                     <button
                       type="button"
                       onClick={() => handleCopy(url, index)}

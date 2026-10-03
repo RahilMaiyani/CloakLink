@@ -176,3 +176,13 @@ input::-webkit-contacts-auto-fill-button {
   display: none !important;
   pointer-events: none;
 }
+
+@keyframes shrinkWidth {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}

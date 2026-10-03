@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { toPng } from 'html-to-image';
+import { toast } from '@/components/Toast';
 
 interface CreatorInfo {
   name?: string;
@@ -141,10 +142,11 @@ export function ShareCardModal({
       a.href = dataUrl;
       a.download = `cloaker-secret-card-${Date.now().toString(36)}.png`;
       a.click();
+      toast.success("Card exported as PNG (3x Retina)");
     }
     catch (err) {
       console.error("Failed to export card image", err);
-      alert("Could not export card image. Please try again.");
+      toast.error("Could not export card image. Please try again.");
     }
     finally {
       setIsDownloading(false);
@@ -205,6 +207,7 @@ export function ShareCardModal({
   function handleCopy() {
     navigator.clipboard.writeText(url);
     setCopied(true);
+    toast.success("Secret link copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -233,7 +236,7 @@ export function ShareCardModal({
             <X className="w-4 h-4" />
           </button>
         </div>
-        {/* ─── UNIFIED MODAL CARD CONTAINER ─── */}
+        {/* ─── MODAL CARD CONTAINER ─── */}
         <div className="w-full bg-[#09090b] border border-neutral-800/90 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9)] overflow-hidden font-mono flex flex-col select-none">
           <div
             ref={cardRef}
@@ -304,7 +307,7 @@ export function ShareCardModal({
               </div>
             )}
 
-            {/* Center Stylized QR Code Box */}
+            {/* Center QR Code Box */}
             <div className="relative mx-auto p-3.5 bg-neutral-950 border border-neutral-800/90 rounded-2xl shadow-[0_0_24px_rgba(16,185,129,0.12)] flex items-center justify-center">
               <div
                 ref={qrContainerRef}
@@ -343,7 +346,7 @@ export function ShareCardModal({
               </div>
             </div>
 
-            {/* Footer Notice */}
+            {/* Footer */}
             <div className="text-center pt-1 border-t border-neutral-800/60 space-y-0.5">
               <div className="text-[10px] text-neutral-400">
                 Point camera or QR scanner to decrypt
@@ -354,7 +357,7 @@ export function ShareCardModal({
             </div>
           </div>
 
-          {/* ─── DOCKED BOTTOM ACTION BAR (INSIDE CONTAINER, EXCLUDED FROM cardRef) ─── */}
+          {/* ─── DOCKED BOTTOM ACTION BAR ─── */}
           <div className="px-4 py-3.5 sm:px-5 sm:py-4 bg-neutral-950/80 border-t border-neutral-800/80 flex items-center gap-2 font-mono">
             <button
               onClick={handleDownloadCard}
@@ -374,7 +377,7 @@ export function ShareCardModal({
               )}
             </button>
 
-            {/* Native Share (Fixed width: w-20 sm:w-22 shrink-0) */}
+            {/* Native Share */}
             <button
               onClick={handleShare}
               disabled={isSharing}

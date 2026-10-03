@@ -16,6 +16,7 @@ import {
   User, Mail, Tag
 } from "lucide-react";
 import { PasscodeInput } from "@/components/PasscodeInput";
+import { toast } from "@/components/Toast";
 
 import Link from "next/link";
 
@@ -137,6 +138,7 @@ export default function RevealPage() {
     if (!secretContent) return;
     navigator.clipboard.writeText(secretContent);
     setCopied(true);
+    toast.success("Secret copied to clipboard");
     setTimeout(() => setCopied(false), 2000);
   }
 
@@ -150,6 +152,7 @@ export default function RevealPage() {
     link.href = url;
     link.download = `secret-${id.slice(0, 8)}.txt`;
     link.click();
+    toast.success(`Downloaded secret-${id.slice(0, 8)}.txt`);
     URL.revokeObjectURL(url);
   }
 
